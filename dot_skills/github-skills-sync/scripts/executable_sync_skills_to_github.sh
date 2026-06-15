@@ -3,7 +3,8 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 SKILLS_ROOT="$(cd "${SCRIPT_DIR}/../.." && pwd)"
-CODEX_HOME_DIR="$(cd "${SKILLS_ROOT}/.." && pwd)"
+CODEX_HOME_DIR="${CODEX_HOME_DIR:-$HOME/.codex}"
+CURRENT_CODEX_SKILLS="${CURRENT_CODEX_SKILLS:-$HOME/.skills}"
 QODER_HOME_DIR="${QODER_HOME_DIR:-$HOME/.qoderwork}"
 CHEZMOI_BIN="${CHEZMOI_BIN:-$HOME/.local/bin/chezmoi}"
 SOURCE_DIR="${CHEZMOI_SOURCE_DIR:-$HOME/.local/share/chezmoi}"
@@ -105,8 +106,48 @@ add_if_exists "$QODER_HOME_DIR/mcp-adaptor.config"
 add_if_exists "$QODER_HOME_DIR/commands/create-command.md"
 add_if_exists "$QODER_HOME_DIR/permission-match-for-bash/safe-alias-scripts/safe_rm.sh"
 
+"$CHEZMOI_BIN" add "$CURRENT_CODEX_SKILLS"
+
 cd "$SOURCE_DIR"
-git add .chezmoiignore dot_codex dot_qoderwork shared_skills
+git add .chezmoiignore dot_codex dot_qoderwork dot_skills
+
+python3 - <<'PY'
+from pathlib import Path
+import re
+import sys
+
+root = Path.cwd()
+scan_roots = [root / "dot_skills", root / "dot_codex", root / "dot_qoderwork"]
+patterns = [
+    re.compile(r'password["\']?\s*[:=]\s*["\'][^"\']{6,}', re.I),
+    re.compile(r'DB_PASSWORD=(?!\$|\*{3})([^\n]{6,})'),
+    re.compile(r'AKIA[0-9A-Z]{16}'),
+    re.compile(r'-----BEGIN (?:RSA |OPENSSH |EC |DSA )?PRIVATE KEY-----'),
+]
+findings = []
+for scan_root in scan_roots:
+    if not scan_root.exists():
+        continue
+    for path in scan_root.rglob("*"):
+        if path.name in {"sync_skills_to_github.sh", "executable_sync_skills_to_github.sh"}:
+            continue
+        if not path.is_file() or "__pycache__" in path.parts or path.suffix == ".pyc":
+            continue
+        try:
+            text = path.read_text(errors="ignore")
+        except Exception:
+            continue
+        for lineno, line in enumerate(text.splitlines(), 1):
+            if any(pattern.search(line) for pattern in patterns):
+                findings.append(f"{path.relative_to(root)}:{lineno}")
+                break
+
+if findings:
+    print("Potential secrets detected; aborting sync:", file=sys.stderr)
+    for finding in findings[:100]:
+        print(f"  {finding}", file=sys.stderr)
+    sys.exit(1)
+PY
 
 if git diff --cached --quiet; then
   echo "No chezmoi skill changes to commit."

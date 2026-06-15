@@ -10,19 +10,41 @@ ERP MySQL 查询工具
   duplicate_check  <YYYY-MM-DD>         - 重复凭证检查
   payment_detail   <YYYY-MM> <order_source> - 付款单明细(按来源)
 """
-import sys, json
+import sys, json, os
 from datetime import datetime
 import pymysql
+from pathlib import Path
 
-DB_CONFIG = {
-    "host": "rr-2zeh95evp4y3t94fkmo.mysql.rds.aliyuncs.com",
-    "port": 3306,
-    "user": "oms_query",
-    "password": "%zVtq^h$30fQIDav",
-    "charset": "utf8mb4",
-    "cursorclass": pymysql.cursors.DictCursor,
-}
 
+
+def load_db_profile(profile_name):
+    path = Path.home() / ".config" / "db-profiles" / f"{profile_name}.env"
+    if not path.exists():
+        raise FileNotFoundError(f"Database profile not found: {path}")
+    data = {}
+    for raw_line in path.read_text().splitlines():
+        line = raw_line.strip()
+        if not line or line.startswith("#") or "=" not in line:
+            continue
+        key, value = line.split("=", 1)
+        data[key.strip()] = value.strip().strip("\"").strip("'")
+    return data
+
+def make_db_config(profile_name, database=None, read_timeout=120):
+    data = load_db_profile(profile_name)
+    return {
+        "host": os.environ.get("DB_HOST", data["DB_HOST"]),
+        "port": int(os.environ.get("DB_PORT", data["DB_PORT"])),
+        "user": os.environ.get("DB_USER", data["DB_USER"]),
+        "password": os.environ.get("DB_PASSWORD", data["DB_PASSWORD"]),
+        "database": database or os.environ.get("DB_NAME", data.get("DB_NAME", "")),
+        "charset": os.environ.get("DB_CHARSET", data.get("DB_CHARSET", "utf8mb4")),
+        "cursorclass": pymysql.cursors.DictCursor,
+        "connect_timeout": 30,
+        "read_timeout": read_timeout,
+    }
+
+DB_CONFIG = make_db_config(os.environ.get("DB_PROFILE", "erp-mysql"), read_timeout=120)
 def get_conn(db="fms_bill"):
     cfg = {**DB_CONFIG, "database": db}
     return pymysql.connect(**cfg)

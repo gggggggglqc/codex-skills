@@ -1,20 +1,21 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-CODEX_SKILLS="${CODEX_SKILLS:-$HOME/.codex/skills}"
+CODEX_SKILLS="${CODEX_SKILLS:-$HOME/.skills}"
+LEGACY_CODEX_SKILLS="${LEGACY_CODEX_SKILLS:-$HOME/.codex/skills}"
 QODER_SKILLS="${QODER_SKILLS:-$HOME/.qoderwork/skills}"
 SOURCE_DIR="${CHEZMOI_SOURCE_DIR:-$HOME/.local/share/chezmoi}"
-SHARED_SKILLS_DIR="${SHARED_SKILLS_DIR:-$SOURCE_DIR/shared_skills}"
+SHARED_SKILLS_DIR="${SHARED_SKILLS_DIR:-$CODEX_SKILLS}"
 APPLY_TO_ENDPOINTS=0
 
 usage() {
   cat <<'EOF'
 Usage: sync_shared_skills.sh [--apply-to-endpoints]
 
-Merge Codex and Qoder skills into one shared_skills directory by skill name.
+Merge Codex and Qoder skills into one shared skills directory by skill name.
 If a skill exists in both tools, the directory with the newest file mtime wins.
-With --apply-to-endpoints, mirror shared_skills back into both ~/.codex/skills
-and ~/.qoderwork/skills so both tools can use the same skill set.
+With --apply-to-endpoints, mirror the shared skills back into ~/.skills,
+~/.codex/skills, and ~/.qoderwork/skills so both tools can use the same skill set.
 EOF
 }
 
@@ -83,6 +84,13 @@ if [[ -d "$CODEX_SKILLS" ]]; then
     -print | while IFS= read -r dir; do basename "$dir"; done >> "$tmp_names"
 fi
 
+if [[ -d "$LEGACY_CODEX_SKILLS" ]]; then
+  find "$LEGACY_CODEX_SKILLS" -mindepth 1 -maxdepth 1 -type d \
+    -not -name '.git' \
+    -not -name '.system' \
+    -print | while IFS= read -r dir; do basename "$dir"; done >> "$tmp_names"
+fi
+
 if [[ -d "$QODER_SKILLS" ]]; then
   find "$QODER_SKILLS" -mindepth 1 -maxdepth 1 -type d \
     -not -name '.temp' \
@@ -92,12 +100,16 @@ fi
 sort -u "$tmp_names" | while IFS= read -r skill_name; do
   [[ -n "$skill_name" ]] || continue
   codex_dir="$CODEX_SKILLS/$skill_name"
+  legacy_codex_dir="$LEGACY_CODEX_SKILLS/$skill_name"
   qoder_dir="$QODER_SKILLS/$skill_name"
   codex_mtime="$(latest_mtime "$codex_dir")"
+  legacy_codex_mtime="$(latest_mtime "$legacy_codex_dir")"
   qoder_mtime="$(latest_mtime "$qoder_dir")"
 
-  if [[ "$qoder_mtime" -gt "$codex_mtime" ]]; then
+  if [[ "$qoder_mtime" -gt "$codex_mtime" && "$qoder_mtime" -gt "$legacy_codex_mtime" ]]; then
     source_dir="$qoder_dir"
+  elif [[ "$legacy_codex_mtime" -gt "$codex_mtime" ]]; then
+    source_dir="$legacy_codex_dir"
   else
     source_dir="$codex_dir"
   fi
@@ -111,6 +123,7 @@ if [[ "$APPLY_TO_ENDPOINTS" -eq 1 ]]; then
   find "$SHARED_SKILLS_DIR" -mindepth 1 -maxdepth 1 -type d -print | while IFS= read -r shared_dir; do
     skill_name="$(basename "$shared_dir")"
     copy_skill "$shared_dir" "$CODEX_SKILLS/$skill_name"
+    copy_skill "$shared_dir" "$LEGACY_CODEX_SKILLS/$skill_name"
     copy_skill "$shared_dir" "$QODER_SKILLS/$skill_name"
   done
 fi
