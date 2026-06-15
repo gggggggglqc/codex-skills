@@ -3,6 +3,7 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 SKILLS_ROOT="$(cd "${SCRIPT_DIR}/../.." && pwd)"
+CODEX_HOME_DIR="$(cd "${SKILLS_ROOT}/.." && pwd)"
 CHEZMOI_BIN="${CHEZMOI_BIN:-$HOME/.local/bin/chezmoi}"
 SOURCE_DIR="${CHEZMOI_SOURCE_DIR:-$HOME/.local/share/chezmoi}"
 REMOTE_URL=""
@@ -14,7 +15,7 @@ usage() {
   cat <<'EOF'
 Usage: sync_skills_to_github.sh [--remote URL] [--branch NAME] [--message TEXT] [--include-system]
 
-Adds ~/.codex/skills to chezmoi source state, commits changed skills, and pushes
+Adds ~/.codex/skills and safe ~/.codex config files to chezmoi source state, commits changes, and pushes
 the chezmoi source repository to the configured GitHub remote when available.
 EOF
 }
@@ -100,8 +101,26 @@ find . -type f \
     esac
   done
 
+add_if_exists() {
+  local target="$1"
+  if [[ -f "$target" ]]; then
+    "$CHEZMOI_BIN" add "$target"
+  fi
+}
+
+add_if_exists "$CODEX_HOME_DIR/config.toml"
+add_if_exists "$CODEX_HOME_DIR/AGENTS.md"
+add_if_exists "$CODEX_HOME_DIR/.codex-global-state.json"
+add_if_exists "$CODEX_HOME_DIR/chrome-native-hosts-v2.json"
+
+if [[ -d "$CODEX_HOME_DIR/automations" ]]; then
+  find "$CODEX_HOME_DIR/automations" -path '*/automation.toml' -type f -print | while IFS= read -r automation_file; do
+    "$CHEZMOI_BIN" add "$automation_file"
+  done
+fi
+
 cd "$SOURCE_DIR"
-git add .
+git add dot_codex
 
 if git diff --cached --quiet; then
   echo "No chezmoi skill changes to commit."

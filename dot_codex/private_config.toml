@@ -1,0 +1,102 @@
+notify = ["/Users/liuqingchen/.codex/computer-use/Codex Computer Use.app/Contents/SharedSupport/SkyComputerUseClient.app/Contents/MacOS/SkyComputerUseClient", "turn-ended"]
+
+[marketplaces.openai-bundled]
+last_updated = "2026-06-13T08:52:00Z"
+source_type = "local"
+source = "/Users/liuqingchen/.codex/.tmp/bundled-marketplaces/openai-bundled"
+
+[marketplaces.openai-primary-runtime]
+last_updated = "2026-06-15T01:22:54Z"
+source_type = "local"
+source = "/Users/liuqingchen/.cache/codex-runtimes/codex-primary-runtime/plugins/openai-primary-runtime"
+
+[plugins."documents@openai-primary-runtime"]
+enabled = true
+
+[plugins."spreadsheets@openai-primary-runtime"]
+enabled = true
+
+[plugins."presentations@openai-primary-runtime"]
+enabled = true
+
+[plugins."google-drive@openai-curated"]
+enabled = true
+
+[plugins."alpaca@openai-curated"]
+enabled = true
+
+[plugins."browser@openai-bundled"]
+enabled = true
+
+[plugins."figma@openai-curated"]
+enabled = true
+
+[plugins."pdf@openai-primary-runtime"]
+enabled = true
+
+[features]
+js_repl = false
+
+[mcp_servers.node_repl]
+args = []
+command = "/Applications/Codex.app/Contents/Resources/cua_node/bin/node_repl"
+startup_timeout_sec = 120
+
+[mcp_servers.node_repl.env]
+NODE_REPL_NATIVE_PIPE_CONNECT_TIMEOUT_MS = "1000"
+NODE_REPL_NODE_MODULE_DIRS = "/Applications/Codex.app/Contents/Resources/cua_node/lib/node_modules"
+NODE_REPL_NODE_PATH = "/Applications/Codex.app/Contents/Resources/cua_node/bin/node"
+NODE_REPL_TRUSTED_CODE_PATHS = "/Users/liuqingchen/.codex"
+CODEX_HOME = "/Users/liuqingchen/.codex"
+NODE_REPL_TRUSTED_BROWSER_CLIENT_SHA256S = "27dca86fd6b571c49414a4b78e46b57bcf683a46cd1319799c11fbb6cfae3110"
+BROWSER_USE_AVAILABLE_BACKENDS = "chrome,iab"
+NODE_REPL_INSTRUCTIONS_USE_CASE_BROWSER = "Control the in-app browser in conjunction with the Browser Plugin."
+NODE_REPL_INSTRUCTIONS_USE_CASE_CHROME = "Control the Chrome browser in conjunction with the Chrome Plugin. Prefer this method of controlling Chrome over alternatives (such as Computer Use) unless the user explicitly mentions an alternative."
+BROWSER_USE_CODEX_APP_BUILD_FLAVOR = "prod"
+BROWSER_USE_CODEX_APP_VERSION = "26.609.41114"
+CODEX_CLI_PATH = "/Applications/Codex.app/Contents/Resources/codex"
+
+[desktop]
+conversationDetailMode = "STEPS_PROSE"
+sansFontSize = 14
+codeFontSize = 13
+ambient-suggestions-enabled = true
+
+[projects."/Users/liuqingchen/Documents/Codex/2026-06-07/windows-codex-windows"]
+trust_level = "trusted"
+
+[projects."/Users/liuqingchen/Documents/Codex/windows-projects/MES"]
+trust_level = "trusted"
+
+[projects."/Users/liuqingchen/Documents/Codex/windows-projects/Das"]
+trust_level = "trusted"
+
+[projects."/Users/liuqingchen/Documents/Codex/windows-projects/SRM"]
+trust_level = "trusted"
+
+[projects."/Users/liuqingchen/Documents/Codex/windows-projects/New project 3"]
+trust_level = "trusted"
+
+[projects."/Users/liuqingchen/Documents/Codex/windows-projects/产品工作"]
+trust_level = "trusted"
+
+[projects."/Users/liuqingchen/Documents/Codex/windows-projects/毛选"]
+trust_level = "trusted"
+
+[projects."/Users/liuqingchen/Documents/Codex/windows-projects/集团内部往来核对"]
+trust_level = "trusted"
+
+[projects."/Users/liuqingchen/Documents/Codex/windows-projects/工厂账务核对"]
+trust_level = "trusted"
+
+[projects."/Users/liuqingchen/Documents/Codex/windows-projects/D-codex"]
+trust_level = "trusted"
+
+[projects."/Users/liuqingchen/Documents/Codex/windows-projects/unknown-windows-project"]
+trust_level = "trusted"
+
+[projects."/Users/liuqingchen/Documents/Fms"]
+trust_level = "trusted"
+
+[projects."/Users/liuqingchen/Documents/个人"]
+trust_level = "trusted"
