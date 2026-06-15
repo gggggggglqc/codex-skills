@@ -1,3 +1,0 @@
-display_name: 产销报价排查
-short_description: 对照报价手册、erp-cost 代码和数据库定位产销报价问题。
-default_prompt: 帮我排查一个产销报价问题，请结合报价手册规则、erp-cost 代码和数据库数据给出原因。
