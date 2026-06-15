@@ -1,0 +1,13 @@
+version = 1
+id = "codex-github"
+kind = "cron"
+name = "每日同步 Codex 配置到 GitHub"
+prompt = "每天检查并同步本机 Codex skills 和安全配置到 GitHub。运行 `bash /Users/liuqingchen/.codex/skills/github-skills-sync/scripts/sync_skills_to_github.sh --message \"Daily Codex config sync\"`。若没有变化，不产生新提交；若推送失败，报告失败原因。"
+status = "ACTIVE"
+rrule = "RRULE:FREQ=DAILY;BYHOUR=21;BYMINUTE=0;BYSECOND=0"
+model = "gpt-5.4"
+reasoning_effort = "low"
+execution_environment = "local"
+cwds = ["/Users/liuqingchen/Documents/Codex/windows-projects/产品工作"]
+created_at = 1781511165802
+updated_at = 1781511165802
