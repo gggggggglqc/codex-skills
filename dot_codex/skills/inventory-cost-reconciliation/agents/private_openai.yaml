@@ -1,0 +1,8 @@
+interface:
+  display_name: "存货成本核对"
+  short_description: "月末存货成本差异核对与单据定位"
+  brand_color: "#256D5A"
+  default_prompt: "Use $inventory-cost-reconciliation to run a monthly inventory cost reconciliation and summarize the key differences."
+
+policy:
+  allow_implicit_invocation: true

@@ -1,0 +1,27 @@
+{
+  "tables": {
+    "finish_job_stock_order": {
+      "path": "../data/finish_job_stock_order.csv"
+    },
+    "report_work_order": {
+      "path": "../data/report_work_order.csv"
+    }
+  },
+  "checks": [
+    {
+      "name": "rule-1-finish-job-stock-order-vs-report-work-order",
+      "group_by": ["material_code"],
+      "left": {
+        "table": "finish_job_stock_order",
+        "op": "sum_columns",
+        "columns": ["actual_num", "defective_actual_num"]
+      },
+      "right": {
+        "table": "report_work_order",
+        "op": "sum_column",
+        "column": "report_work_num"
+      },
+      "tolerance": "0.01"
+    }
+  ]
+}

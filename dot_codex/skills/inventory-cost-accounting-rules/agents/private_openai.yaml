@@ -1,0 +1,4 @@
+interface:
+  display_name: "存货成本核算规则"
+  short_description: "查询工厂和集团存货成本取价、参与计算、赋值和状态规则。"
+  default_prompt: "使用 $inventory-cost-accounting-rules 查询出入库单成本价取值、参与计算和赋值规则。"

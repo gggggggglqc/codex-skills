@@ -1,0 +1,4 @@
+interface:
+  display_name: "GitHub Skills Sync"
+  short_description: "Sync local skills to a GitHub repo"
+  default_prompt: "Use $github-skills-sync to commit and push updated local skills to GitHub."

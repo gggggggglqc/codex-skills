@@ -1,0 +1,4 @@
+interface:
+  display_name: "T+1 对数据流程"
+  short_description: "按 T+1 月初刷数、费用导入、凭证检查和对账规则处理数据流程。"
+  default_prompt: "请按 T+1 对数据流程，帮我梳理月初任务、费用入账规范、凭证检查或差异排查。"

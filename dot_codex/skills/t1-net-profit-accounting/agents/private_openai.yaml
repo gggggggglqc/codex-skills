@@ -1,0 +1,4 @@
+interface:
+  display_name: "T+1 净利核算"
+  short_description: "按 T+1 净利核算口径梳理字段、来源、分摊和核对规则。"
+  default_prompt: "请按 T+1 净利核算规则，帮我梳理口径、字段来源、费用分摊逻辑或核对差异。"

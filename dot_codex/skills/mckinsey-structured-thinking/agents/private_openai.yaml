@@ -1,0 +1,3 @@
+display_name: 麦肯锡化思维
+short_description: 用结论先行、以上统下、归类分组、逻辑递进整理方案、PRD 和汇报。
+default_prompt: 请用麦肯锡化思维，把我的内容整理成结论先行、层次清晰、MECE 分组、逻辑递进的结构。

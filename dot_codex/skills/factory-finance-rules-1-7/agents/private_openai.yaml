@@ -1,0 +1,4 @@
+interface:
+  display_name: "工厂财务1-7数据核对"
+  short_description: "按工厂财务 1-7 规则核对完工、成本、委外和领料数据"
+  default_prompt: "使用 $factory-finance-rules-1-7 按月份执行工厂财务 1-7 数据核对，生成规则结果文件，并在配置机器人后发送汇总。"

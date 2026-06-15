@@ -1,0 +1,3 @@
+display_name: 对账技能
+short_description: 运行采购入库、其他入库、其他出库核对并排查差异单号
+default_prompt: 用这个技能执行采购入库、其他入库、其他出库核对，或排查指定差异单号

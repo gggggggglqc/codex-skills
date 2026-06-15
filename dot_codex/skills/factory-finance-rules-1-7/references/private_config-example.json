@@ -1,0 +1,133 @@
+{
+  "tables": {
+    "completion": {
+      "path": "../data/completion_receipt.csv"
+    },
+    "reporting": {
+      "path": "../data/reporting_receipt.csv"
+    },
+    "cost_restore": {
+      "path": "../data/actual_cost_restore.csv"
+    },
+    "prod_cost": {
+      "path": "../data/production_cost_management.csv"
+    },
+    "outsource_finance": {
+      "path": "../data/finance_outsource_detail.csv"
+    },
+    "material_issue": {
+      "path": "../data/material_issue.csv"
+    },
+    "backflush": {
+      "path": "../data/backflush_issue.csv"
+    }
+  },
+  "checks": [
+    {
+      "name": "rule-1-finished-receipt-vs-reporting",
+      "group_by": ["doc_no", "item_code"],
+      "left": {
+        "table": "completion",
+        "op": "sum_column",
+        "column": "qty"
+      },
+      "right": {
+        "table": "reporting",
+        "op": "sum_column",
+        "column": "receipt_qty"
+      },
+      "tolerance": "0.01"
+    },
+    {
+      "name": "rule-2-finished-receipt-vs-cost-restore",
+      "group_by": ["doc_no", "item_code"],
+      "left": {
+        "table": "completion",
+        "op": "sum_column",
+        "column": "qty"
+      },
+      "right": {
+        "table": "cost_restore",
+        "op": "sum_column",
+        "column": "finished_receipt_qty"
+      },
+      "tolerance": "0.01"
+    },
+    {
+      "name": "rule-3-finished-receipt-vs-production-cost",
+      "group_by": ["doc_no", "item_code"],
+      "left": {
+        "table": "completion",
+        "op": "sum_column",
+        "column": "qty"
+      },
+      "right": {
+        "table": "prod_cost",
+        "op": "sum_column",
+        "column": "production_receipt_qty"
+      },
+      "tolerance": "0.01"
+    },
+    {
+      "name": "rule-4-completion-amount-vs-cost-restore",
+      "group_by": ["doc_no", "item_code"],
+      "left": {
+        "table": "completion",
+        "op": "sum_product",
+        "columns": ["cost_unit_price", "qty"]
+      },
+      "right": {
+        "table": "cost_restore",
+        "op": "sum_column",
+        "column": "production_cost_amount"
+      },
+      "tolerance": "0.01"
+    },
+    {
+      "name": "rule-5-completion-amount-vs-production-cost",
+      "group_by": ["doc_no", "item_code"],
+      "left": {
+        "table": "completion",
+        "op": "sum_product",
+        "columns": ["cost_unit_price", "qty"]
+      },
+      "right": {
+        "table": "prod_cost",
+        "op": "sum_column",
+        "column": "actual_production_receipt_amount"
+      },
+      "tolerance": "0.01"
+    },
+    {
+      "name": "rule-6-outsourcing-cost-vs-finance-detail",
+      "group_by": ["doc_no", "supplier_code"],
+      "left": {
+        "table": "cost_restore",
+        "op": "sum_column",
+        "column": "actual_outsource_fee"
+      },
+      "right": {
+        "table": "outsource_finance",
+        "op": "sum_column",
+        "column": "outsource_fee"
+      },
+      "tolerance": "0.01"
+    },
+    {
+      "name": "rule-7-material-issue-vs-backflush",
+      "group_by": ["doc_no", "item_code"],
+      "left": {
+        "table": "material_issue",
+        "op": "sum_column",
+        "column": "qty"
+      },
+      "right": {
+        "table": "backflush",
+        "op": "sum_column",
+        "column": "qty",
+        "multiplier": "1"
+      },
+      "tolerance": "0.01"
+    }
+  ]
+}
