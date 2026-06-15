@@ -2,7 +2,7 @@ version = 1
 id = "codex-github"
 kind = "cron"
 name = "每日同步 Codex/Qoder 配置到 GitHub"
-prompt = "每天检查并同步本机 Codex 与 Qoder 的安全配置和共享技能到 GitHub。运行 `bash /Users/liuqingchen/.codex/skills/github-skills-sync/scripts/sync_skills_to_github.sh --message \"Daily Codex Qoder config sync\"`。脚本会把 Codex/Qoder 两端技能按技能名称合并到 chezmoi source 的 `shared_skills/`，同名技能以文件更新时间较新的目录为准，并镜像回 `~/.codex/skills` 与 `~/.qoderwork/skills`。配置文件分端保存：Codex 配置放 `dot_codex/`，Qoder 配置放 `dot_qoderwork/`。不得上传 auth、session、logs、sqlite、cache、插件缓存、projects、todos、临时目录等敏感或动态文件。若没有变化，不产生新提交；若推送失败，报告失败原因。"
+prompt = "每天检查并同步本机 Codex 与 Qoder 的安全配置和共享技能到 GitHub。运行 `bash /Users/liuqingchen/.codex/skills/github-skills-sync/scripts/sync_skills_to_github.sh --message \"Daily Codex Qoder config sync\"`。脚本会把 `~/.skills`、`~/.codex/skills` 与 `~/.qoderwork/skills` 按技能名称合并，同名技能以文件更新时间较新的目录为准，并镜像回三端。配置文件分端保存：Codex 配置放 `dot_codex/`，Qoder 配置放 `dot_qoderwork/`，共享技能通过 chezmoi 保存到 `dot_skills/`。不得上传 auth、session、logs、sqlite、cache、插件缓存、projects、todos、临时目录、`~/.config/db-profiles/*.env` 等敏感或动态文件。上传前必须做敏感信息扫描；若没有变化，不产生新提交；若推送失败，报告失败原因。"
 status = "ACTIVE"
 rrule = "RRULE:FREQ=DAILY;BYHOUR=21;BYMINUTE=0;BYSECOND=0"
 model = "gpt-5.4"
@@ -10,4 +10,4 @@ reasoning_effort = "low"
 execution_environment = "local"
 cwds = ["/Users/liuqingchen/Documents/Codex/windows-projects/产品工作"]
 created_at = 1781511165802
-updated_at = 1781512464620
+updated_at = 1781523596061
