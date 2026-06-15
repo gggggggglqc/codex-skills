@@ -1,0 +1,22 @@
+[
+  {
+    "content": "读取当前 SKILL.md 和查询脚本",
+    "status": "completed",
+    "activeForm": "读取当前技能文件"
+  },
+  {
+    "content": "增加「我的任务到期」和「谁的任务快到期」场景",
+    "status": "completed",
+    "activeForm": "增加到期查询场景"
+  },
+  {
+    "content": "更新 query_tasks.py 支持新查询模式",
+    "status": "completed",
+    "activeForm": "更新查询脚本"
+  },
+  {
+    "content": "验证更新后的技能",
+    "status": "completed",
+    "activeForm": "验证技能"
+  }
+]

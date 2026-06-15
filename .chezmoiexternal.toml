@@ -1,0 +1,7 @@
+[".codex/skills"]
+    type = "symlink"
+    url = "file://{{ .chezmoi.homeDir }}/.skills"
+
+[".qoderwork/skills"]
+    type = "symlink"
+    url = "file://{{ .chezmoi.homeDir }}/.skills"
