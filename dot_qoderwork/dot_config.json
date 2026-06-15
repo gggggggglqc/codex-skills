@@ -1,0 +1,26 @@
+{
+  "region_config": {
+    "preferredInferenceNode": {
+      "endpoint": "https://api3.qoder.sh",
+      "latency": 0
+    },
+    "fallbackIpMap": {
+      "api3.qoder.sh": [
+        "47.103.9.44",
+        "47.103.128.242"
+      ],
+      "center.qoder.sh": [
+        "101.132.70.5",
+        "106.14.225.66"
+      ],
+      "openapi.qoder.sh": [
+        "101.132.70.5",
+        "106.14.225.66"
+      ],
+      "qts2.qoder.sh": [
+        "47.116.44.184",
+        "47.116.36.231"
+      ]
+    }
+  }
+}

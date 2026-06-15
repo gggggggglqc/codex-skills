@@ -1,0 +1,27 @@
+{
+  "autoCompactEnabled": true,
+  "todoFeatureEnabled": true,
+  "checkpointingEnabled": true,
+  "verbose": false,
+  "autoUpdates": true,
+  "theme": "Qoder",
+  "autoConnectIde": false,
+  "maxOutputTokens": 16384,
+  "cachedChangelog": "## CLI 0.1.46\n- Added skill autocomplete support in slash command selector\n- Improved subagent UI rendering and interaction experience\n- Fixed long content being truncated in code blocks and Bash output\n\n## CLI 0.1.45\n- Bug fixes and stability improvements\n\n## CLI 0.1.43\n- Implemented permission request queuing and sequential display for concurrent subagents\n- Fixed startup blocking caused by slow network responses\n- Fixed CLI crash when config file is corrupted\n\n## CLI 0.1.42\n- Bug fixes and stability improvements\n\n## CLI 0.1.41\n- Fixed queued message submission clearing content being edited in input area\n- Bug fixes and stability improvements\n\n## CLI 0.1.39\n- Improved login session stability in multi-process scenarios\n- Bug fixes and stability improvements\n\n## CLI 0.1.38\n- Added TranscriptPath field to all hook inputs for accessing conversation transcript\n- Fixed subagent Model configuration not being applied\n- Fixed subagent not inheriting MCP tools from parent agent\n- Improved error detection for input too long scenarios\n- Fixed concurrent writes to config file causing file corruption\n\n## CLI 0.1.37\n- Added real-time streaming output for Bash tool in TUI\n- Added prompt suggestion with skill creation guidance\n- Redesigned /feedback command with email input step\n- Fixed custom model configuration being lost after switching models\n- Fixed Windows Bash streaming output and crash issues\n\n## CLI ...\n- See https://qoder.com/changelog?page=1\u0026type=cli\n",
+  "numStartups": 0,
+  "installMethod": "",
+  "tipsHistory": {
+    "new-user-warmup": 0
+  },
+  "firstStartTime": "0001-01-01T00:00:00Z",
+  "userID": "",
+  "appleTerminalSetupInProgress": false,
+  "appleTerminalBackupPath": "",
+  "optionAsMetaKeyInstalled": false,
+  "hasCompletedOnboarding": false,
+  "lastOnboardingVersion": "",
+  "subscriptionNoticeCount": 0,
+  "hasAvailableSubscription": false,
+  "changelogLastFetched": 0,
+  "isQualifiedForDataSharing": false
+}

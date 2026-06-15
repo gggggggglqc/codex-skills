@@ -1,0 +1,32 @@
+[
+  {
+    "content": "安装 chezmoi",
+    "status": "completed",
+    "activeForm": "正在安装 chezmoi"
+  },
+  {
+    "content": "查看 .qoderwork 目录详细内容，确定排除规则",
+    "status": "completed",
+    "activeForm": "正在查看目录结构"
+  },
+  {
+    "content": "初始化 chezmoi 并添加 .qoderwork",
+    "status": "in_progress",
+    "activeForm": "正在初始化 chezmoi"
+  },
+  {
+    "content": "配置 .chezmoiignore 排除临时文件",
+    "status": "pending",
+    "activeForm": "正在配置排除规则"
+  },
+  {
+    "content": "关联远程仓库并推送",
+    "status": "pending",
+    "activeForm": "正在关联远程仓库"
+  },
+  {
+    "content": "验证配置是否正确",
+    "status": "pending",
+    "activeForm": "正在验证配置"
+  }
+]

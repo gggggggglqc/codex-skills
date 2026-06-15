@@ -1,0 +1,9 @@
+.qoderwork/bin
+.qoderwork/projects
+.qoderwork/logs
+.qoderwork/cache
+.qoderwork/.cache
+.qoderwork/.auth
+.qoderwork/workspace
+.qoderwork/shell-snapshots
+.qoderwork/machine-id

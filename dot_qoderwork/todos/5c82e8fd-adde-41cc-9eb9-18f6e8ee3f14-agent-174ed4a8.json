@@ -1,0 +1,27 @@
+[
+  {
+    "content": "List all skill subdirectories and auxiliary directories",
+    "status": "completed",
+    "activeForm": "Listing all skill subdirectories and auxiliary directories"
+  },
+  {
+    "content": "Read main config files for each skill",
+    "status": "completed",
+    "activeForm": "Reading main config files for each skill"
+  },
+  {
+    "content": "Read default.rules file",
+    "status": "completed",
+    "activeForm": "Reading default.rules file"
+  },
+  {
+    "content": "Check vendor_imports, .system, ambient-suggestions, automations directories",
+    "status": "completed",
+    "activeForm": "Checking auxiliary directories"
+  },
+  {
+    "content": "Summarize all findings",
+    "status": "in_progress",
+    "activeForm": "Summarizing all findings"
+  }
+]
