@@ -120,6 +120,7 @@ sort -u "$tmp_names" | while IFS= read -r skill_name; do
 done
 
 if [[ "$APPLY_TO_ENDPOINTS" -eq 1 ]]; then
+  mkdir -p "$CODEX_SKILLS" "$LEGACY_CODEX_SKILLS" "$QODER_SKILLS"
   find "$SHARED_SKILLS_DIR" -mindepth 1 -maxdepth 1 -type d -print | while IFS= read -r shared_dir; do
     skill_name="$(basename "$shared_dir")"
     copy_skill "$shared_dir" "$CODEX_SKILLS/$skill_name"
