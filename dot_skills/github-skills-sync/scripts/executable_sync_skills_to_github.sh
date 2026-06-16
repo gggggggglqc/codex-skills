@@ -106,10 +106,25 @@ add_if_exists "$QODER_HOME_DIR/mcp-adaptor.config"
 add_if_exists "$QODER_HOME_DIR/commands/create-command.md"
 add_if_exists "$QODER_HOME_DIR/permission-match-for-bash/safe-alias-scripts/safe_rm.sh"
 
-"$CHEZMOI_BIN" add "$CURRENT_CODEX_SKILLS"
+if [[ -d "$CURRENT_CODEX_SKILLS" ]]; then
+  find "$CURRENT_CODEX_SKILLS" -mindepth 1 -maxdepth 1 -type d \
+    -not -name '.git' \
+    -not -name '.temp' \
+    -not -name '.system' \
+    -print | while IFS= read -r skill_dir; do
+      "$CHEZMOI_BIN" add "$skill_dir"
+    done
+
+  if [[ "$INCLUDE_SYSTEM" -eq 1 && -d "$CURRENT_CODEX_SKILLS/.system" ]]; then
+    "$CHEZMOI_BIN" add "$CURRENT_CODEX_SKILLS/.system"
+  fi
+fi
 
 cd "$SOURCE_DIR"
 git add .chezmoiignore dot_codex dot_qoderwork dot_skills
+if [[ "$INCLUDE_SYSTEM" -ne 1 && -d dot_skills/dot_system ]]; then
+  git rm -r --quiet dot_skills/dot_system
+fi
 
 python3 - <<'PY'
 from pathlib import Path
