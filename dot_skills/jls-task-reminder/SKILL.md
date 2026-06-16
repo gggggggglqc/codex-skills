@@ -7,18 +7,20 @@ description: 查询和管理 jls-core 家里事任务系统。包括：查询产
 
 ## 数据库连接
 
-WMS 线上只读账号（jls_core 库）：
+本 skill 不保存任何真实数据库凭据。统一使用本地只读 profile：
 
-| 项目 | 值 |
-|------|-----|
-| 外网连接 | rr-2ze2z5m8919dglgt1po.mysql.rds.aliyuncs.com |
-| 内网连接 | rr-2ze2z5m8919dglgt1.mysql.rds.aliyuncs.com |
-| 端口 | 3306 |
-| 账号 | wms_query |
-| 密码 | ^6u5K2cc4bQW%Rg |
-| 数据库 | jls_core（主业务）、hris_ads（组织架构） |
+- 默认 profile：`DB_PROFILE=wms-mysql`
+- profile 文件：`~/.config/db-profiles/wms-mysql.env`
+- 连接库：`jls_core`（主业务）、`hris_ads`（组织架构）
+- charset：`utf8mb4`
 
-使用 `pymysql` 连接，charset 用 `utf8mb4`。
+执行前可先检查 profile：
+
+```bash
+python3 ~/.codex/skills/database-config/scripts/load_db_profile.py --profile wms-mysql
+```
+
+如需临时切换连接信息，只允许通过本地环境变量覆盖，不得把账号密码写回 skill。
 
 ## 产品组定义
 

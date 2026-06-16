@@ -89,29 +89,24 @@ python scripts/query_compare.py full_compare 2026-05
 python scripts/query_compare.py code_diff 2026-05 CI168
 ```
 
-## 数据库连接信息
+## 数据库连接配置
 
-### ERP MySQL（只读）
+本 skill 禁止保存真实数据库账号密码。统一通过本地 profile 读取：
 
-| 参数 | 值 |
-|---|---|
-| Host | rr-2zeh95evp4y3t94fkmo.mysql.rds.aliyuncs.com |
-| Port | 3306 |
-| User | oms_query |
-| Password | %zVtq^h$30fQIDav |
-| 数据库 | fms_bill（凭证/出纳）、fms_cost（费用） |
+- ERP MySQL：默认使用 `DB_PROFILE=erp-mysql`
+- Doris 数仓：默认使用 `DB_PROFILE=doris`
+- profile 文件位置：`~/.config/db-profiles/<profile>.env`
 
-### Doris 数仓
+可先用下面的命令检查 profile 是否存在且字段完整：
 
-| 参数 | 值 |
-|---|---|
-| Host | cmccnet.jiabs.com |
-| Port | 19130 |
-| User | db_devops |
-| Password | mVk3ydQVwN |
-| 数据库 | dp_dws |
+```bash
+python3 ~/.codex/skills/database-config/scripts/load_db_profile.py --profile erp-mysql
+python3 ~/.codex/skills/database-config/scripts/load_db_profile.py --profile doris
+```
 
-> **注意**: 内网地址 192.168.4.99:19030 不可用（无 MySQL 握手），必须用外网地址。
+如果要临时覆盖 profile，可在执行前设置环境变量 `DB_HOST`、`DB_PORT`、`DB_USER`、`DB_PASSWORD`、`DB_NAME`。
+
+> **注意**: profile 文件只允许保存在本机，不得写回 skill、GitHub 或日志。
 
 ## 常用科目编码速查
 
