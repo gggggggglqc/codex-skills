@@ -1,7 +1,7 @@
 notify = ["/Users/liuqingchen/.codex/computer-use/Codex Computer Use.app/Contents/SharedSupport/SkyComputerUseClient.app/Contents/MacOS/SkyComputerUseClient", "turn-ended"]
 
 [marketplaces.openai-bundled]
-last_updated = "2026-06-17T05:35:54Z"
+last_updated = "2026-06-22T00:23:54Z"
 source_type = "local"
 source = "/Users/liuqingchen/.codex/.tmp/bundled-marketplaces/openai-bundled"
 
@@ -48,12 +48,12 @@ NODE_REPL_NODE_MODULE_DIRS = "/Applications/Codex.app/Contents/Resources/cua_nod
 NODE_REPL_NODE_PATH = "/Applications/Codex.app/Contents/Resources/cua_node/bin/node"
 NODE_REPL_TRUSTED_CODE_PATHS = "/Users/liuqingchen/.codex"
 CODEX_HOME = "/Users/liuqingchen/.codex"
-NODE_REPL_TRUSTED_BROWSER_CLIENT_SHA256S = "099cb5ac09333da8389063d49d03a7e277fc87d858b0526a538f0871af93bf68"
+NODE_REPL_TRUSTED_BROWSER_CLIENT_SHA256S = "2c20141b13bec5a64cd2874d8e2df011430d5b1a70e4f5425aa10d01743311a8"
 BROWSER_USE_AVAILABLE_BACKENDS = "chrome,iab"
 NODE_REPL_INSTRUCTIONS_USE_CASE_BROWSER = "Control the in-app browser in conjunction with the Browser Plugin."
 NODE_REPL_INSTRUCTIONS_USE_CASE_CHROME = "Control the Chrome browser in conjunction with the Chrome Plugin. Prefer this method of controlling Chrome over alternatives (such as Computer Use) unless the user explicitly mentions an alternative."
 BROWSER_USE_CODEX_APP_BUILD_FLAVOR = "prod"
-BROWSER_USE_CODEX_APP_VERSION = "26.611.61753"
+BROWSER_USE_CODEX_APP_VERSION = "26.616.51431"
 CODEX_CLI_PATH = "/Applications/Codex.app/Contents/Resources/codex"
 
 [desktop]
@@ -108,4 +108,7 @@ trust_level = "trusted"
 trust_level = "trusted"
 
 [projects."/Users/liuqingchen/工作/AI/codex/fms-cost"]
+trust_level = "trusted"
+
+[projects."/Users/liuqingchen/Documents/投资管理"]
 trust_level = "trusted"
