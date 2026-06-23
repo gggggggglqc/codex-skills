@@ -89,6 +89,38 @@ add_if_exists() {
   fi
 }
 
+sanitize_qoder_mcp_adaptor() {
+  local target="$SOURCE_DIR/dot_qoderwork/private_mcp-adaptor.config"
+  if [[ ! -f "$target" ]]; then
+    return
+  fi
+  python3 - "$target" <<'PY'
+from pathlib import Path
+import json
+import sys
+
+path = Path(sys.argv[1])
+data = json.loads(path.read_text())
+if "token" in data and data["token"]:
+    data["token"] = "__REDACTED__"
+headers = data.get("headers")
+if isinstance(headers, dict):
+    for key in list(headers):
+        if key.lower() in {"x-api-key", "authorization", "token"} and headers[key]:
+            headers[key] = "__REDACTED__"
+path.write_text(json.dumps(data, ensure_ascii=False, indent=2) + "\n")
+PY
+}
+
+prune_source_tree() {
+  local root="$1"
+  shift
+  if [[ ! -d "$root" ]]; then
+    return
+  fi
+  find "$root" "$@" -exec rm -rf {} +
+}
+
 add_if_exists "$CODEX_HOME_DIR/config.toml"
 add_if_exists "$CODEX_HOME_DIR/AGENTS.md"
 add_if_exists "$CODEX_HOME_DIR/.codex-global-state.json"
@@ -121,6 +153,23 @@ if [[ -d "$CURRENT_CODEX_SKILLS" ]]; then
 fi
 
 cd "$SOURCE_DIR"
+sanitize_qoder_mcp_adaptor
+prune_source_tree "$SOURCE_DIR/dot_qoderwork" \
+  \( -path '*/todos' -o -path '*/todos/*' \
+  -o -path '*/plugins' -o -path '*/plugins/*' \
+  -o -path '*/logs' -o -path '*/logs/*' \
+  -o -path '*/cache' -o -path '*/cache/*' \
+  -o -path '*/.cache' -o -path '*/.cache/*' \
+  -o -path '*/projects' -o -path '*/projects/*' \
+  -o -path '*/workspace' -o -path '*/workspace/*' \
+  -o -path '*/shell-snapshots' -o -path '*/shell-snapshots/*' \)
+prune_source_tree "$SOURCE_DIR/dot_codex" \
+  \( -path '*/plugins' -o -path '*/plugins/*' \
+  -o -path '*/cache' -o -path '*/cache/*' \
+  -o -path '*/tmp' -o -path '*/tmp/*' \
+  -o -path '*/.tmp' -o -path '*/.tmp/*' \
+  -o -path '*/sessions' -o -path '*/sessions/*' \
+  -o -path '*/logs' -o -path '*/logs/*' \)
 git add .chezmoiignore dot_codex dot_qoderwork dot_skills
 if [[ "$INCLUDE_SYSTEM" -ne 1 && -d dot_skills/dot_system ]]; then
   git rm -r --quiet dot_skills/dot_system
