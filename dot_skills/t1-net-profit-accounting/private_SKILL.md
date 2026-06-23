@@ -57,3 +57,20 @@ The source workbook did not contain a literal sheet named `sheet1`; the rules we
 This skill was created from `C:\Users\lqc\Downloads\T+1净利核算表.xlsx`, excluding only a literal `sheet1` if present.
 
 If a future workbook version is provided, update the reference file first, then keep this `SKILL.md` focused on routing and workflow rather than copying every row into the main skill body.
+
+## 最新 T+1 需求动态（2026-06 更新）
+
+来源：[T+1需求登记表](https://alidocs.dingtalk.com/i/nodes/QOG9lyrgJP3PAm3kubkrwd0nVzN67Mw4)
+
+| 日期 | 提出人 | 需求 | 状态 |
+|---|---|---|---|
+| 2026-06-18 | 冯小锋 | 所得税计算逻辑修改 | 已沟通 |
+| 2026-04-24 | 吴泽祥 | T+1达人增加7日环比和月完成率，导入业务目标 | 待定 |
+| 2026-04-20 | 冯小锋 | 凭证状态已审核+已过账都要取数 | 待定 |
+| 2026-04-16 | 吴泽祥 | 补发订单成本归属达人 | 待定 |
+| 2026-04-13 | 财务和业务 | 财年净利包含3.31数据 | 开发中 |
+| 2026-04-10 | 内控组 | 部门增加可发天数，一元人力改成人力成本占比 | 需求梳理中 |
+| 2026-04-01 | 老板 | 净利换成税后净利（不含税收入/成本/费用） | 开发中 |
+| 2026-02-27 | 老板 | 收入用产值，成本用最新存货价/报价 | 待定 |
+| 2026-01-21 | 吴泽祥 | 平台链接增加发货量字段 | 开发中 |
+| 2025-10-16 | 郭元迎 | 完成口径T+1（收入/成本/科目分摊/净利） | 需求梳理中 |

@@ -288,9 +288,28 @@ CALC_SUBJECT_CODE = {"6601.98", "6001.99", "6051.03", "6401.99"}
 
 触发条件：`dataType=COMPANY` + `dataGroup=ALL` + 非跨境。
 
-## 数据同步调度（syncMultiAnalysisAllData）
+## 数据同步调度（syncMultiAnalysisAllData）— MQ 异步架构（2026-06 重构）
 
-全量数据同步并行执行以下任务：
+### 整体架构变更
+
+原来的"进程内同步执行"已重构为"MQ 消息驱动的异步解耦架构"：
+
+```
+XXL-Job 调度触发
+  → syncMultiAnalysisAllData（轻量入口，只发 MQ 消息）
+  → FanoutExchange 广播消息
+  → SyncMultiAnalysisAllDataConsumer（消费端）
+  → syncMultiAnalysisAllDataByMag（实际执行多维数据同步）
+  → SKU 计算通过 SkuCalcSendMsgSupport 发送 MQ 到 das-batch 异步执行
+  → das-batch 计算完成后统一发送钉钉通知
+```
+
+### 入口方法（MonitorNetProfitDetailSupport）
+
+- `syncMultiAnalysisAllData`：轻量级方法，只往 FanoutExchange 发送一条 MQ 消息即返回。**不再同步执行数据计算**。
+- `syncMultiAnalysisAllDataByMag`：实际执行多维报表数据同步的方法（公司/部门/店铺/供应商/渠道/达人/原子SKU/平台链接）。由消费者调用。
+
+### 多维数据同步任务（在 syncMultiAnalysisAllDataByMag 中并行执行）
 
 1. 公司销售大屏 → `monitorCompanySalesService.sumMonitorCompanySalesData`
 2. 部门 → `monitorOwnerService.syncOwnerSales`
@@ -300,14 +319,50 @@ CALC_SUBJECT_CODE = {"6601.98", "6001.99", "6051.03", "6401.99"}
 6. 达人 → `monitorAuthorService.sync`
 7. 原子SKU → `monitorAtomicSkuService.monitorCalcAtomicSku`
 8. 平台链接 → `monitorPlatSpuService.sync`
-9. SKU基础数据（分MODEL和DIS_MODEL两种模式） → `monitorSpuService.monitorCalcSku`
+9. ~~SKU基础数据~~ → **已剥离至 das-batch**，通过 MQ 消息 `das-core_sku_batch_queue_das-batch` 异步执行
 
-执行时机：
+### SKU 计算异步化
+
+- **SkuCalcSendMsgSupport**（新增组件）：统一的 SKU 批量计算消息发送入口，通过 `MQSendManager.getMessageSender(MQPlateEnum.OMS)` 发送到队列 `das-core_sku_batch_queue_das-batch`（Direct Exchange 模式）。
+- **DasCoreSkuBatchMessageBO**（新增消息体）：
+  - `msgId`：消息唯一 ID（SnowFlake 生成）
+  - `dates`：需要计算的日期列表
+  - `isTodayCalc`：是否计算当天（区分定时触发 vs 历史补数）
+  - `isJobSync`：是否由定时 Job 触发
+  - `preCalcResult`：前置任务（供应商/渠道/达人等）是否全部成功
+  - `content`：预生成的钉钉通知文案
+
+### 消费者（SyncMultiAnalysisAllDataConsumer）
+
+- 监听队列 `${sync.multi.analysis.all.data.queue}`
+- 使用**手动 ACK**（`channel.basicAck`），确保消息成功处理后才确认
+- 通过 `@Conditional(Load.class)` 条件加载，由 Apollo 配置 `rabbit.consumer.enable` 控制开关
+- 收到消息后调用 `syncMultiAnalysisAllDataByMag` 执行实际数据同步
+
+### GoodsMonitorJob（XXL-Job：monitorSkuDataCalc）
+
+- **之前**：在进程内用 `CompletableFuture` 并行跑 SKU 计算，等待结果后发钉钉通知
+- **之后**：通过 `SkuCalcSendMsgSupport.senMessage()` 发送 MQ 消息，方法直接返回 SUCCESS，不再等待计算结果
+- 钉钉通知时机延迟到 das-batch 端 SKU 计算完成后统一发送
+- 通知文案通过 `MonitorNotifySupport.getContent()` 提前生成，随消息传递
+
+### FanoutExchange 配置
+
+- Exchange 类型：**FanoutExchange**（广播模式，支持多消费者扩展）
+- Exchange 名：Apollo 配置 `sync.multi.analysis.all.data.exchange`，默认 `sync_multi_analysis_all_data_exchange`
+- Queue 名：Apollo 配置 `sync.multi.analysis.all.data.queue`
+
+### 执行时机
+
 - 周一：同步前3天（周六、周日、周一）
 - 其他：同步当天
 - 可指定日期范围
 
-完成后发送钉钉通知（token + secret + keyword 从 Apollo 配置读取）。
+### 钉钉通知
+
+- Token + Secret + Keyword 从 Apollo 配置读取
+- 通知文案由 `MonitorNotifySupport.getContent(Date syncStartDate, Date syncEndDate)` 根据时间段生成
+- 发送时机：das-batch 端 SKU 计算完成且 `isJobSync=true` 且 `preCalcResult=true` 时才发送
 
 ## Apollo 配置项
 
@@ -338,6 +393,9 @@ CALC_SUBJECT_CODE = {"6601.98", "6001.99", "6051.03", "6401.99"}
 | `monitor.sku.calc.days` | MONITOR_SKU_CALC_DAYS | 空 | SKU计算天数 |
 | `monitor.supplier.calc.days` | MONITOR_SUPPLIER_CALC_DAYS | 空 | 供应商计算天数 |
 | `monitor.owner.calc.days` | MONITOR_OWNER_CALC_DAYS | 空 | 货主计算天数 |
+| `sync.multi.analysis.all.data.exchange` | SYNC_MULTI_ANALYSIS_ALL_DATA_EXCHANGE | `sync_multi_analysis_all_data_exchange` | 多维数据同步 FanoutExchange 名称 |
+| `sync.multi.analysis.all.data.queue` | — | — | 多维数据同步消费队列名称 |
+| `rabbit.consumer.enable` | — | — | 消费者开关（Load 条件加载） |
 
 ## 时间区间定义
 

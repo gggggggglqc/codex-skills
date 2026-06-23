@@ -1,12 +1,12 @@
 notify = ["/Users/liuqingchen/.codex/computer-use/Codex Computer Use.app/Contents/SharedSupport/SkyComputerUseClient.app/Contents/MacOS/SkyComputerUseClient", "turn-ended"]
 
 [marketplaces.openai-bundled]
-last_updated = "2026-06-22T00:23:54Z"
+last_updated = "2026-06-23T08:23:59Z"
 source_type = "local"
 source = "/Users/liuqingchen/.codex/.tmp/bundled-marketplaces/openai-bundled"
 
 [marketplaces.openai-primary-runtime]
-last_updated = "2026-06-20T04:50:58Z"
+last_updated = "2026-06-23T06:22:27Z"
 source_type = "local"
 source = "/Users/liuqingchen/.cache/codex-runtimes/codex-primary-runtime/plugins/openai-primary-runtime"
 
@@ -34,6 +34,9 @@ enabled = true
 [plugins."pdf@openai-primary-runtime"]
 enabled = true
 
+[plugins."template-creator@openai-primary-runtime"]
+enabled = true
+
 [features]
 js_repl = false
 
@@ -48,12 +51,12 @@ NODE_REPL_NODE_MODULE_DIRS = "/Applications/Codex.app/Contents/Resources/cua_nod
 NODE_REPL_NODE_PATH = "/Applications/Codex.app/Contents/Resources/cua_node/bin/node"
 NODE_REPL_TRUSTED_CODE_PATHS = "/Users/liuqingchen/.codex"
 CODEX_HOME = "/Users/liuqingchen/.codex"
-NODE_REPL_TRUSTED_BROWSER_CLIENT_SHA256S = "2c20141b13bec5a64cd2874d8e2df011430d5b1a70e4f5425aa10d01743311a8"
+NODE_REPL_TRUSTED_BROWSER_CLIENT_SHA256S = "5ee3754ef68f803b9cebf40e30f94ea22aaf446de1a0a24b109180fa2ae0bd3e"
 BROWSER_USE_AVAILABLE_BACKENDS = "chrome,iab"
 NODE_REPL_INSTRUCTIONS_USE_CASE_BROWSER = "Control the in-app browser in conjunction with the Browser Plugin."
 NODE_REPL_INSTRUCTIONS_USE_CASE_CHROME = "Control the Chrome browser in conjunction with the Chrome Plugin. Prefer this method of controlling Chrome over alternatives (such as Computer Use) unless the user explicitly mentions an alternative."
 BROWSER_USE_CODEX_APP_BUILD_FLAVOR = "prod"
-BROWSER_USE_CODEX_APP_VERSION = "26.616.51431"
+BROWSER_USE_CODEX_APP_VERSION = "26.616.71553"
 CODEX_CLI_PATH = "/Applications/Codex.app/Contents/Resources/codex"
 
 [desktop]
@@ -61,12 +64,28 @@ conversationDetailMode = "STEPS_PROSE"
 sansFontSize = 14
 codeFontSize = 13
 ambient-suggestions-enabled = true
+appearanceLightCodeThemeId = "codex"
+dock-icon-preference = "app-default"
 
 [desktop.open-in-target-preferences]
 global = "fileManager"
 
 [desktop.open-in-target-preferences.perPath]
 "/Users/liuqingchen/Documents/Codex/windows-projects/New project 3" = "fileManager"
+
+[desktop.appearanceLightChromeTheme]
+accent = "#0169cc"
+contrast = 45
+ink = "#0d0d0d"
+opaqueWindows = false
+surface = "#ffffff"
+
+[desktop.appearanceLightChromeTheme.fonts]
+
+[desktop.appearanceLightChromeTheme.semanticColors]
+diffAdded = "#00a240"
+diffRemoved = "#e02e2a"
+skill = "#751ed9"
 
 [projects."/Users/liuqingchen/Documents/Codex/2026-06-07/windows-codex-windows"]
 trust_level = "trusted"
