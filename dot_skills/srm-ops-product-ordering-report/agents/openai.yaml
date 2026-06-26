@@ -1,0 +1,4 @@
+interface:
+  display_name: "SRM商品运营订货"
+  short_description: "商品版运营订货报表全流程沉淀"
+  default_prompt: "Use $srm-ops-product-ordering-report to explain the product-version SRM operations ordering report flow in business-friendly language."
