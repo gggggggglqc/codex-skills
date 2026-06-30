@@ -316,11 +316,12 @@ action({ key: "qoderwork.settings.appUpdate", action: "execute", params: { opera
 
 ### Voice Input (`qoderwork.settings.voiceInput`)
 
-Query returns the voice input enable state, shortcut mode, single-key keycode, combo shortcut, and current Fn-key status. Update supports `enabled`, `overlayEnabled`, `mode`, `singleKeycode`, and `shortcut`. Update accepts exactly one setting field per call; send separate update actions for multi-step changes.
+Query returns the voice input enable state, overlay state, speaker recognition state, shortcut mode, single-key keycode, combo shortcut, and current Fn-key status. Update supports `enabled`, `overlayEnabled`, `voiceprintEnabled`, `mode`, `singleKeycode`, and `shortcut`. Update accepts exactly one setting field per call; send separate update actions for multi-step changes.
 
 ```
 query({ key: "qoderwork.settings.voiceInput" })
 action({ key: "qoderwork.settings.voiceInput", action: "enable" })
+action({ key: "qoderwork.settings.voiceInput", action: "update", params: { voiceprintEnabled: true } })
 action({ key: "qoderwork.settings.voiceInput", action: "update", params: { mode: "combo" } })
 action({ key: "qoderwork.settings.voiceInput", action: "update", params: { shortcut: "ctrl+shift+space" } })
 ```
