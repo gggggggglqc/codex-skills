@@ -663,7 +663,10 @@ class BaseSchemaValidator:
                                            base_url=str(schema_path))
                 schema = lxml.etree.XMLSchema(xsd_doc)
 
-            with open(fp, "r") as fh:
+            # Open in binary mode so lxml reads the encoding from the XML
+            # declaration. Text mode would fall back to the platform default
+            # encoding (GBK on Chinese Windows) and fail on UTF-8 XML.
+            with open(fp, "rb") as fh:
                 xml_tree = lxml.etree.parse(fh)
 
             xml_tree, _ = self._scrub_template_placeholders(xml_tree)

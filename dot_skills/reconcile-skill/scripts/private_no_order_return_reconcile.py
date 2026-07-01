@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
+from __future__ import annotations
 
 """
 无单退货入库单核对工具（FMS vs IOM）
@@ -31,6 +32,14 @@ DETAIL_KEY = Tuple[str, str]
 DESKTOP_DIR = os.path.join(os.path.expanduser("~"), "Desktop")
 ORDER_STATUSES: List[str] = ["10", "20", "30", "40"]
 PSI_GROUP_TYPES: List[str] = ["126", "127", "130", "143", "145", "156", "157", "158", "166"]
+FACTORY_PSI_GROUP_TYPES: List[str] = [
+    "426",
+    "427",
+    "428",
+    "435",
+    "438",
+    "439",
+]
 
 
 def parse_datetime(value: str) -> str:
@@ -95,26 +104,51 @@ def build_pair_filter(alias_warehouse: str, alias_goods: str, pairs: Sequence[Tu
     return " OR ".join(clauses), params
 
 
+PSI_SALES_FACTORY_WAREHOUSE_EXPR = "COALESCE(NULLIF(ps.out_warehouse_code, ''), ps.in_warehouse_code)"
+PSI_SALES_EXCLUDE_FACTORY_BUSINESS_SQL = (
+    "AND (fw.warehouse_use_type IS NULL OR fw.warehouse_use_type <> 4) "
+    "AND NOT (COALESCE(st.department, '') LIKE '%%产销%%' AND COALESCE(st.department_attribute, 0) = 2) "
+)
+
+
 def fetch_left_summary(conn, start_time: str, end_time: str) -> Dict[SUMMARY_KEY, Decimal]:
     group_placeholders = ", ".join(["%s"] * len(PSI_GROUP_TYPES))
-    sql = (
+    factory_placeholders = ", ".join(["%s"] * len(FACTORY_PSI_GROUP_TYPES))
+    sql_common = (
         "SELECT "
-        "COALESCE(in_warehouse_code, '') AS warehouse_code, "
-        "goods_code AS goods_code, "
-        "SUM(refund_num) AS total_num "
-        "FROM fms_cost.psi_sales "
-        "WHERE business_date BETWEEN %s AND %s "
-        "AND psi_data_from_type = 4 "
-        f"AND psi_group_type IN ({group_placeholders}) "
-        "AND in_warehouse_code != '' "
-        "GROUP BY COALESCE(in_warehouse_code, ''), goods_code"
+        "COALESCE(ps.in_warehouse_code, '') AS warehouse_code, "
+        "ps.goods_code AS goods_code, "
+        "SUM(ps.refund_num) AS total_num "
+        "FROM fms_cost.psi_sales ps "
+        f"LEFT JOIN oms_product.warehouse fw ON {PSI_SALES_FACTORY_WAREHOUSE_EXPR} = fw.warehouse_code "
+        "LEFT JOIN oms_business.shop sh ON ps.shop_code = sh.shop_code "
+        "LEFT JOIN oms_business.structure st ON sh.structure_id = st.id "
+        "WHERE ps.business_date BETWEEN %s AND %s "
+        "AND ps.psi_data_from_type = 4 "
+        f"AND ps.psi_group_type IN ({group_placeholders}) "
+        "AND ps.in_warehouse_code != '' "
+        f"{PSI_SALES_EXCLUDE_FACTORY_BUSINESS_SQL}"
+        "GROUP BY COALESCE(ps.in_warehouse_code, ''), ps.goods_code"
+    )
+    sql_factory = (
+        "SELECT "
+        "COALESCE(ps.in_warehouse_code, '') AS warehouse_code, "
+        "ps.goods_code AS goods_code, "
+        "SUM(ps.refund_num) AS total_num "
+        "FROM fms_cost.psi_factory_sales ps "
+        "WHERE ps.business_date BETWEEN %s AND %s "
+        "AND ps.psi_data_from_type = 4 "
+        f"AND ps.psi_group_type IN ({factory_placeholders}) "
+        "AND ps.in_warehouse_code != '' "
+        "GROUP BY COALESCE(ps.in_warehouse_code, ''), ps.goods_code"
     )
     result: Dict[SUMMARY_KEY, Decimal] = {}
     with conn.cursor() as cursor:
-        cursor.execute(sql, [start_time[:10], end_time[:10]] + PSI_GROUP_TYPES)
-        for row in cursor.fetchall():
-            key = (str(row["warehouse_code"]), str(row["goods_code"]))
-            result[key] = to_decimal(row["total_num"])
+        for sql, group_types in ((sql_common, PSI_GROUP_TYPES), (sql_factory, FACTORY_PSI_GROUP_TYPES)):
+            cursor.execute(sql, [start_time[:10], end_time[:10]] + group_types)
+            for row in cursor.fetchall():
+                key = (str(row["warehouse_code"]), str(row["goods_code"]))
+                result[key] = result.get(key, Decimal("0")) + to_decimal(row["total_num"])
     return result
 
 
@@ -175,26 +209,43 @@ def build_summary_rows(left_summary: Dict[SUMMARY_KEY, Decimal], right_summary: 
 
 def fetch_left_detail(conn, start_time: str, end_time: str, pairs: Sequence[Tuple[str, str]], batch_size: int) -> Dict[DETAIL_KEY, Decimal]:
     group_placeholders = ", ".join(["%s"] * len(PSI_GROUP_TYPES))
-    base_sql = (
+    factory_placeholders = ", ".join(["%s"] * len(FACTORY_PSI_GROUP_TYPES))
+    base_sql_common = (
         "SELECT "
-        "business_code AS business_code, "
-        "goods_code AS goods_code, "
-        "SUM(refund_num) AS total_num "
-        "FROM fms_cost.psi_sales "
-        "WHERE business_date BETWEEN %s AND %s "
-        "AND psi_data_from_type = 4 "
-        f"AND psi_group_type IN ({group_placeholders}) "
-        "AND in_warehouse_code != '' "
+        "ps.business_code AS business_code, "
+        "ps.goods_code AS goods_code, "
+        "SUM(ps.refund_num) AS total_num "
+        "FROM fms_cost.psi_sales ps "
+        f"LEFT JOIN oms_product.warehouse fw ON {PSI_SALES_FACTORY_WAREHOUSE_EXPR} = fw.warehouse_code "
+        "LEFT JOIN oms_business.shop sh ON ps.shop_code = sh.shop_code "
+        "LEFT JOIN oms_business.structure st ON sh.structure_id = st.id "
+        "WHERE ps.business_date BETWEEN %s AND %s "
+        "AND ps.psi_data_from_type = 4 "
+        f"AND ps.psi_group_type IN ({group_placeholders}) "
+        "AND ps.in_warehouse_code != '' "
+        f"{PSI_SALES_EXCLUDE_FACTORY_BUSINESS_SQL}"
+    )
+    base_sql_factory = (
+        "SELECT "
+        "ps.business_code AS business_code, "
+        "ps.goods_code AS goods_code, "
+        "SUM(ps.refund_num) AS total_num "
+        "FROM fms_cost.psi_factory_sales ps "
+        "WHERE ps.business_date BETWEEN %s AND %s "
+        "AND ps.psi_data_from_type = 4 "
+        f"AND ps.psi_group_type IN ({factory_placeholders}) "
+        "AND ps.in_warehouse_code != '' "
     )
     result: Dict[DETAIL_KEY, Decimal] = {}
     with conn.cursor() as cursor:
         for batch in chunked(list(pairs), batch_size):
-            pair_filter, pair_params = build_pair_filter("COALESCE(in_warehouse_code, '')", "goods_code", batch)
-            sql = base_sql + f"AND ({pair_filter}) GROUP BY business_code, goods_code"
-            cursor.execute(sql, [start_time[:10], end_time[:10]] + PSI_GROUP_TYPES + pair_params)
-            for row in cursor.fetchall():
-                key = (str(row["business_code"]), str(row["goods_code"]))
-                result[key] = result.get(key, Decimal("0")) + to_decimal(row["total_num"])
+            pair_filter, pair_params = build_pair_filter("COALESCE(ps.in_warehouse_code, '')", "ps.goods_code", batch)
+            for base_sql, group_types in ((base_sql_common, PSI_GROUP_TYPES), (base_sql_factory, FACTORY_PSI_GROUP_TYPES)):
+                sql = base_sql + f"AND ({pair_filter}) GROUP BY ps.business_code, ps.goods_code"
+                cursor.execute(sql, [start_time[:10], end_time[:10]] + group_types + pair_params)
+                for row in cursor.fetchall():
+                    key = (str(row["business_code"]), str(row["goods_code"]))
+                    result[key] = result.get(key, Decimal("0")) + to_decimal(row["total_num"])
     return result
 
 
@@ -227,7 +278,7 @@ def fetch_iom_order_meta(conn, business_codes: Sequence[str]) -> Dict[str, Dict[
         return {}
     result: Dict[str, Dict[str, str]] = {}
     with conn.cursor() as cursor:
-        for batch in chunked(list(business_codes), 200):
+        for batch in chunked(list(business_codes), 50):
             placeholders = ", ".join(["%s"] * len(batch))
             sql = (
                 "SELECT "
@@ -373,7 +424,14 @@ def main() -> None:
         if diff_pairs:
             left_detail = fetch_left_detail(conn, args.start_time, args.end_time, diff_pairs, args.batch_size)
             right_detail = fetch_right_detail(conn, args.start_time, args.end_time, diff_pairs, args.batch_size)
-            iom_order_meta = fetch_iom_order_meta(conn, sorted({business_code for business_code, _ in set(left_detail.keys()) | set(right_detail.keys())}))
+            fms_diff_codes = sorted(
+                {
+                    business_code
+                    for business_code, goods_code in set(left_detail.keys()) | set(right_detail.keys())
+                    if left_detail.get((business_code, goods_code), Decimal("0")) != 0
+                }
+            )
+            iom_order_meta = fetch_iom_order_meta(conn, fms_diff_codes)
             detail_rows = build_detail_rows(left_detail, right_detail, iom_order_meta, args.start_time, args.end_time)
     finally:
         conn.close()

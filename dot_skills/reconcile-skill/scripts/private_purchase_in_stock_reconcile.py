@@ -1,5 +1,6 @@
 ﻿#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
+from __future__ import annotations
 
 """
 采购入库核对工具（FMS vs IOM）
@@ -147,7 +148,10 @@ def fetch_iom_summary(
         "SELECT "
         "COALESCE(o.warehouse_code, '') AS warehouse_code, "
         "d.goods_code AS goods_code, "
-        "SUM(d.actual_num + d.defective_actual_num) AS total_num "
+        "SUM(CASE "
+        "    WHEN d.stock_order_code LIKE 'PRK%%' THEN d.arrive_num + d.arrive_defective_num "
+        "    ELSE d.actual_num + d.defective_actual_num "
+        "END) AS total_num "
         "FROM erp_iom.stock_order_detail d "
         "LEFT JOIN erp_iom.stock_order o ON d.stock_order_code = o.stock_order_code "
         "LEFT JOIN oms_product.warehouse w ON o.warehouse_code = w.warehouse_code "
@@ -268,7 +272,10 @@ def fetch_iom_detail(
         "SELECT "
         "d.stock_order_code AS order_code, "
         "d.goods_code AS goods_code, "
-        "SUM(d.actual_num + d.defective_actual_num) AS total_num "
+        "SUM(CASE "
+        "    WHEN d.stock_order_code LIKE 'PRK%%' THEN d.arrive_num + d.arrive_defective_num "
+        "    ELSE d.actual_num + d.defective_actual_num "
+        "END) AS total_num "
         "FROM erp_iom.stock_order_detail d "
         "LEFT JOIN erp_iom.stock_order o ON d.stock_order_code = o.stock_order_code "
         "LEFT JOIN oms_product.warehouse w ON o.warehouse_code = w.warehouse_code "

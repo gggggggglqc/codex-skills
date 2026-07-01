@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
+from __future__ import annotations
 
 """
 销售出库核对工具（FMS vs IOM）
@@ -49,6 +50,17 @@ PSI_GROUP_TYPES: List[str] = [
     "171",
     "172",
     "106",
+]
+FACTORY_PSI_GROUP_TYPES: List[str] = [
+    "402",
+    "404",
+    "405",
+    "406",
+    "407",
+    "408",
+    "410",
+    "412",
+    "413",
 ]
 WHITELIST_WAREHOUSES = {"WH0882", "WH0388", "WH0390", "WH0237", "WH0494"}
 
@@ -136,27 +148,51 @@ def build_pair_filter(alias_warehouse: str, alias_goods: str, pairs: Sequence[Tu
     return " OR ".join(clauses), params
 
 
+PSI_SALES_EXCLUDE_FACTORY_BUSINESS_SQL = (
+    "AND (w.warehouse_use_type IS NULL OR w.warehouse_use_type <> 4) "
+    "AND NOT (COALESCE(st.department, '') LIKE '%%产销%%' AND COALESCE(st.department_attribute, 0) = 2) "
+)
+
+
 def fetch_left_summary(conn, start_time: str, end_time: str, day_batch_size: int) -> Dict[SUMMARY_KEY, Decimal]:
     placeholders = ", ".join(["%s"] * len(PSI_GROUP_TYPES))
-    sql = (
+    factory_placeholders = ", ".join(["%s"] * len(FACTORY_PSI_GROUP_TYPES))
+    sql_common = (
         "SELECT "
-        "COALESCE(out_warehouse_code, '') AS warehouse_code, "
-        "goods_code AS goods_code, "
-        "SUM(actual_num) AS total_num "
-        "FROM fms_cost.psi_sales "
-        "LEFT JOIN oms_product.warehouse w ON psi_sales.out_warehouse_code = w.warehouse_code "
-        "WHERE business_date BETWEEN %s AND %s "
-        f"AND psi_group_type IN ({placeholders}) "
-        "AND (w.warehouse_use_type IS NULL OR w.warehouse_use_type <> 2 OR psi_sales.out_warehouse_code IN ('WH0882','WH0388','WH0390','WH0237','WH0494')) "
-        "GROUP BY COALESCE(out_warehouse_code, ''), goods_code"
+        "COALESCE(ps.out_warehouse_code, '') AS warehouse_code, "
+        "ps.goods_code AS goods_code, "
+        "SUM(ps.actual_num) AS total_num "
+        "FROM fms_cost.psi_sales ps "
+        "LEFT JOIN oms_product.warehouse w ON ps.out_warehouse_code = w.warehouse_code "
+        "LEFT JOIN oms_business.shop sh ON ps.shop_code = sh.shop_code "
+        "LEFT JOIN oms_business.structure st ON sh.structure_id = st.id "
+        "WHERE ps.business_date BETWEEN %s AND %s "
+        f"AND ps.psi_group_type IN ({placeholders}) "
+        "AND (w.warehouse_use_type IS NULL OR w.warehouse_use_type <> 2 OR ps.out_warehouse_code IN ('WH0882','WH0388','WH0390','WH0237','WH0494')) "
+        f"{PSI_SALES_EXCLUDE_FACTORY_BUSINESS_SQL}"
+        "GROUP BY COALESCE(ps.out_warehouse_code, ''), ps.goods_code"
+    )
+    sql_factory = (
+        "SELECT "
+        "COALESCE(ps.out_warehouse_code, '') AS warehouse_code, "
+        "ps.goods_code AS goods_code, "
+        "SUM(ps.actual_num) AS total_num "
+        "FROM fms_cost.psi_factory_sales ps "
+        "LEFT JOIN oms_product.warehouse w ON ps.out_warehouse_code = w.warehouse_code "
+        "WHERE ps.business_date BETWEEN %s AND %s "
+        "AND ps.psi_data_from_type = 1 "
+        f"AND ps.psi_group_type IN ({factory_placeholders}) "
+        "AND (w.warehouse_use_type IS NULL OR w.warehouse_use_type <> 2 OR ps.out_warehouse_code IN ('WH0882','WH0388','WH0390','WH0237','WH0494')) "
+        "GROUP BY COALESCE(ps.out_warehouse_code, ''), ps.goods_code"
     )
     result: Dict[SUMMARY_KEY, Decimal] = {}
     with conn.cursor() as cursor:
         for range_start, range_end in split_datetime_range(start_time, end_time, day_batch_size):
-            cursor.execute(sql, [range_start[:10], range_end[:10]] + PSI_GROUP_TYPES)
-            for row in cursor.fetchall():
-                key = (str(row["warehouse_code"]), str(row["goods_code"]))
-                result[key] = result.get(key, Decimal("0")) + to_decimal(row["total_num"])
+            for sql, group_types in ((sql_common, PSI_GROUP_TYPES), (sql_factory, FACTORY_PSI_GROUP_TYPES)):
+                cursor.execute(sql, [range_start[:10], range_end[:10]] + group_types)
+                for row in cursor.fetchall():
+                    key = (str(row["warehouse_code"]), str(row["goods_code"]))
+                    result[key] = result.get(key, Decimal("0")) + to_decimal(row["total_num"])
     return result
 
 
@@ -234,27 +270,47 @@ def fetch_left_detail(
     day_batch_size: int,
 ) -> Dict[DETAIL_KEY, Decimal]:
     placeholders = ", ".join(["%s"] * len(PSI_GROUP_TYPES))
-    base_sql = (
+    factory_placeholders = ", ".join(["%s"] * len(FACTORY_PSI_GROUP_TYPES))
+    base_sql_common = (
         "SELECT "
-        "business_code AS business_code, "
-        "goods_code AS goods_code, "
-        "SUM(actual_num) AS total_num "
-        "FROM fms_cost.psi_sales "
-        "LEFT JOIN oms_product.warehouse w ON psi_sales.out_warehouse_code = w.warehouse_code "
-        "WHERE business_date BETWEEN %s AND %s "
-        f"AND psi_group_type IN ({placeholders}) "
-        "AND (w.warehouse_use_type IS NULL OR w.warehouse_use_type <> 2 OR psi_sales.out_warehouse_code IN ('WH0882','WH0388','WH0390','WH0237','WH0494')) "
+        "ps.business_code AS business_code, "
+        "ps.goods_code AS goods_code, "
+        "SUM(ps.actual_num) AS total_num "
+        "FROM fms_cost.psi_sales ps "
+        "LEFT JOIN oms_product.warehouse w ON ps.out_warehouse_code = w.warehouse_code "
+        "LEFT JOIN oms_business.shop sh ON ps.shop_code = sh.shop_code "
+        "LEFT JOIN oms_business.structure st ON sh.structure_id = st.id "
+        "WHERE ps.business_date BETWEEN %s AND %s "
+        f"AND ps.psi_group_type IN ({placeholders}) "
+        "AND (w.warehouse_use_type IS NULL OR w.warehouse_use_type <> 2 OR ps.out_warehouse_code IN ('WH0882','WH0388','WH0390','WH0237','WH0494')) "
+        f"{PSI_SALES_EXCLUDE_FACTORY_BUSINESS_SQL}"
+    )
+    base_sql_factory = (
+        "SELECT "
+        "ps.business_code AS business_code, "
+        "ps.goods_code AS goods_code, "
+        "SUM(ps.actual_num) AS total_num "
+        "FROM fms_cost.psi_factory_sales ps "
+        "LEFT JOIN oms_product.warehouse w ON ps.out_warehouse_code = w.warehouse_code "
+        "WHERE ps.business_date BETWEEN %s AND %s "
+        "AND ps.psi_data_from_type = 1 "
+        f"AND ps.psi_group_type IN ({factory_placeholders}) "
+        "AND (w.warehouse_use_type IS NULL OR w.warehouse_use_type <> 2 OR ps.out_warehouse_code IN ('WH0882','WH0388','WH0390','WH0237','WH0494')) "
     )
     result: Dict[DETAIL_KEY, Decimal] = {}
     with conn.cursor() as cursor:
         for batch in chunked(list(pairs), batch_size):
-            pair_filter, pair_params = build_pair_filter("COALESCE(out_warehouse_code, '')", "goods_code", batch)
-            sql = base_sql + f"AND ({pair_filter}) GROUP BY business_code, goods_code"
+            pair_filter, pair_params = build_pair_filter("COALESCE(ps.out_warehouse_code, '')", "ps.goods_code", batch)
             for range_start, range_end in split_datetime_range(start_time, end_time, day_batch_size):
-                cursor.execute(sql, [range_start[:10], range_end[:10]] + PSI_GROUP_TYPES + pair_params)
-                for row in cursor.fetchall():
-                    key = (str(row["business_code"]), str(row["goods_code"]))
-                    result[key] = result.get(key, Decimal("0")) + to_decimal(row["total_num"])
+                for base_sql, group_types in (
+                    (base_sql_common, PSI_GROUP_TYPES),
+                    (base_sql_factory, FACTORY_PSI_GROUP_TYPES),
+                ):
+                    sql = base_sql + f"AND ({pair_filter}) GROUP BY ps.business_code, ps.goods_code"
+                    cursor.execute(sql, [range_start[:10], range_end[:10]] + group_types + pair_params)
+                    for row in cursor.fetchall():
+                        key = (str(row["business_code"]), str(row["goods_code"]))
+                        result[key] = result.get(key, Decimal("0")) + to_decimal(row["total_num"])
     return result
 
 

@@ -1,247 +1,160 @@
 ---
 name: pptx
-version: 1.0.1
+version: 2.0.0
 description: "Use this skill any time a .pptx file is involved in any way — as input, output, or both. This includes: creating slide decks, pitch decks, or presentations; reading, parsing, or extracting text from any .pptx file (even if the extracted content will be used elsewhere, like in an email or summary); editing, modifying, or updating existing presentations; combining or splitting slide files; working with templates, layouts, speaker notes, or comments. Trigger whenever the user mentions \"deck,\" \"slides,\" \"presentation,\" or references a .pptx filename, regardless of what they plan to do with the content afterward. If a .pptx file needs to be opened, created, or touched, use this skill."
 description_zh: "当 .pptx 文件以任何方式涉及时使用此技能——无论是作为输入、输出还是两者兼有。包括：创建幻灯片、演示文稿或路演材料；读取、解析或提取任何 .pptx 文件中的文本（即使提取的内容将用于其他地方，如邮件或摘要）；编辑、修改或更新现有演示文稿；合并或拆分幻灯片文件；使用模板、布局、演讲者备注或批注。当用户提及\"幻灯片\"、\"演示文稿\"、\"PPT\"或引用 .pptx 文件名时触发，无论他们计划如何使用内容。只要需要打开、创建或操作 .pptx 文件，就使用此技能。"
-license: Proprietary. LICENSE.txt has complete terms
 ---
 
-# PowerPoint Presentation Skill
+# PPTX Pro 2.0 — Fast Path
 
-## At a Glance
+## Core principle
 
-> Quickly determine which workflow applies to your situation:
+Generate a polished, professional `.pptx` in 6–10 minutes by following a single five-step fast path:
 
-- **Extracting or reading content** — `python -m markitdown presentation.pptx`
-- **Modifying an existing deck or building from a template** — see [editing.md](editing.md)
-- **Generating a brand-new presentation without any template** — see [pptxgenjs.md](pptxgenjs.md)
+1. **Gather material** — collect the topic, audience, deck length, and any user-supplied source content.
+2. **Ensure environment** — verify Python + `python-pptx`; install if missing.
+3. **Write generator** — produce a single `generate.py` script with inline overflow safeguards.
+4. **Execute & self-correct** — run, fix any P0 issues in place, rerun.
+5. **Deliver** — output the `.pptx` to the workspace outputs folder with a one-paragraph QA note.
 
----
+This skill uses Python + python-pptx as the unified engine for all PPTX operations. Quality bars stay the same; the delivery path is faster and more predictable.
 
-## Extracting Content
+## When to use
 
-Three approaches for pulling information out of a `.pptx` file:
+Use this skill for any task involving `.pptx` files:
 
-**Plain-text extraction:**
-```bash
-python -m markitdown presentation.pptx
-```
+- **From scratch generation** — follow the five-step fast path in this file.
+- **Editing an existing .pptx** — follow the three-step path in `references/editing.md` (read structure → write modify script → markitdown verify). Same python-pptx engine, no XML unpacking.
+- **Read-only inspection / text extraction** — run `python -m markitdown deck.pptx` directly, or use the structured-read snippet at the top of `references/editing.md`.
 
-**Slide thumbnail overview:**
-```bash
-python scripts/thumbnail.py presentation.pptx
-```
+## Step 1 — Gather material
 
-**Underlying XML inspection:**
-```bash
-python scripts/office/unpack.py presentation.pptx unpacked/
-```
+Ask only what is genuinely missing. Do not run mandatory multi-round clarification. The minimum context needed is:
 
----
+- **Topic** — what the deck is about.
+- **Audience and tone** — executive, technical, sales, training, internal review.
+- **Length** — slide count target, default 6–8.
+- **Source content** — paste, file path, or "use public knowledge."
 
-## Modifying Existing Decks
+If the user already gave clear instructions, skip the question round and proceed.
 
-Full instructions live in [editing.md](editing.md). The condensed version:
+## Step 2 — Ensure environment
 
-1. Examine the template via `thumbnail.py`
-2. Unpack the file, restructure slides, update content, run cleanup, then repack
-
----
-
-## Building from Scratch
-
-Full instructions live in [pptxgenjs.md](pptxgenjs.md).
-
-Choose this path when there is no existing file or reference deck to work from.
-
----
-
-## Visual Design Principles
-
-**Boring slides are unacceptable.** White backgrounds with plain bullet points produce forgettable presentations. Apply the following guidance to every slide you build.
-
-### Color Strategy
-
-| Decision | Guidance |
-|----------|----------|
-| **Palette selection** | Colors must speak to the subject matter. If they could transfer to an unrelated topic unchanged, they are not distinctive enough. |
-| **Weight hierarchy** | One dominant hue (60–70%), one or two supporting tones, one high-contrast accent. Equal distribution looks amateur. |
-| **Background rhythm** | Alternate light and dark backgrounds — dark bookends (opener + closer) with lighter body slides, or fully dark for premium aesthetics. |
-| **Visual motif** | Commit to one recurring treatment (circular image masks, colored icon badges, heavy one-sided borders) carried through every slide. |
-
-### Suggested Color Palettes
-
-Pick hues appropriate to the topic. Generic blue is a last resort.
-
-| Name | Primary | Secondary | Accent |
-|------|---------|-----------|--------|
-| **Deep Night** | `1E2761` (navy) | `CADCFC` (ice blue) | `FFFFFF` (white) |
-| **Woodland** | `2C5F2D` (forest) | `97BC62` (moss) | `F5F5F5` (cream) |
-| **Vibrant Coral** | `F96167` (coral) | `F9E795` (gold) | `2F3C7E` (navy) |
-| **Earth Tone** | `B85042` (terracotta) | `E7E8D1` (sand) | `A7BEAE` (sage) |
-| **Deep Sea** | `065A82` (deep blue) | `1C7293` (teal) | `21295C` (midnight) |
-| **Graphite** | `36454F` (charcoal) | `F2F2F2` (off-white) | `212121` (black) |
-| **Aquatic Trust** | `028090` (teal) | `00A896` (seafoam) | `02C39A` (mint) |
-| **Wine & Linen** | `6D2E46` (berry) | `A26769` (dusty rose) | `ECE2D0` (cream) |
-| **Eucalyptus** | `84B59F` (sage) | `69A297` (eucalyptus) | `50808E` (slate) |
-| **Crimson Impact** | `990011` (cherry) | `FCF6F5` (off-white) | `2F3C7E` (navy) |
-
-### Layout & Composition
-
-**No slide should exist without a visual component** — whether that is an image, chart, icon, or decorative shape.
-
-**Arrangement patterns:**
-- Split layout — text on one side, visual on the other
-- Icon rows — colored circular badge + bold label + descriptive copy
-- Grid blocks — 2×2 or 2×3 cards with image and text pairs
-- Full-bleed imagery — half the slide is a photo, the other half is overlaid content
-
-**Data presentation:**
-- Oversized numeric callouts (60–72pt stat with a small descriptor underneath)
-- Side-by-side comparison (before/after, advantages/disadvantages)
-- Sequential flow (numbered steps connected by arrows)
-
-**Finishing touches:**
-- Small colored circles with icons beside section headings
-- Italicized accent phrases for key takeaways or taglines
-
-### Typography
-
-**Avoid defaulting to Arial.** Select a header typeface with character, paired with a clean body font.
-
-| Heading | Body |
-|---------|------|
-| Georgia | Calibri |
-| Arial Black | Arial |
-| Calibri | Calibri Light |
-| Cambria | Calibri |
-| Trebuchet MS | Calibri |
-| Impact | Arial |
-| Palatino | Garamond |
-| Consolas | Calibri |
-
-**Sizing scale:**
-
-| Role | Size |
-|------|------|
-| Main slide heading | 36–44pt bold |
-| Subheading | 20–24pt bold |
-| Paragraph text | 14–16pt |
-| Footnotes/captions | 10–12pt muted |
-
-### Whitespace
-
-- Maintain at least 0.5″ margins on all edges
-- Allow 0.3–0.5″ gaps between content regions
-- Resist filling every available inch — breathing room improves readability
-
-### Common Mistakes
-
-> Treat each item as a hard constraint. Violating any one degrades the final result.
-
-| Mistake | Why it fails | Fix |
-|---------|-------------|-----|
-| Monotonous layouts | Viewer fatigue | Alternate between columns, card grids, and callout styles |
-| Centered body copy | Reduces readability | Left-align running text; reserve centering for titles only |
-| Weak size contrast | Hierarchy collapses | Titles must be 36pt+ vs 14–16pt body |
-| Automatic blue | Generic appearance | Choose palette colors that suit the specific topic |
-| Inconsistent spacing | Visual noise | Pick 0.3″ or 0.5″ gaps and apply uniformly |
-| Partial styling | Looks unfinished | Commit fully to a visual system or keep it minimal throughout |
-| Walls of text | Unreadable | Supplement every slide with imagery, icons, charts, or shapes |
-| Ignoring text-box padding | Misalignment | Set `margin: 0` or offset to compensate for default padding |
-| Poor contrast | Illegible content | Ensure strong contrast — light-on-light or dark-on-dark is unreadable |
-| Accent lines beneath titles | Machine-generated look | Prefer whitespace or background color separation |
-
----
-
-## Quality Assurance (Mandatory)
-
-**Start with the assumption that something is wrong. Your task is to identify it.**
-
-First drafts are virtually never error-free. Treat QA as a bug-hunting exercise rather than a rubber stamp. Finding zero issues on the first pass means you have not looked carefully enough.
-
-### Textual QA
+Run probes. If they succeed, skip install:
 
 ```bash
-python -m markitdown output.pptx
+python -c "import pptx; print(pptx.__version__)"
+python -m markitdown --help >NUL 2>&1
 ```
 
-Verify completeness, correctness, and ordering of all slide content.
-
-**When working from templates, scan for residual placeholder text:**
+If they fail:
 
 ```bash
-python -m markitdown output.pptx | grep -iE "xxxx|lorem|ipsum|this.*(page|slide).*layout"
+python -m pip install --quiet python-pptx "markitdown[pptx]"
 ```
 
-Any matches must be resolved before the presentation is considered done.
+If Python itself is unavailable, note this to the user and suggest installing Python first. Do not attempt to silently install Python.
 
-### Visual QA
+If `markitdown` cannot be installed, fall back to the pure python-pptx inspection snippet from `references/editing.md` Step 1.
 
-**Delegate to subagents** — even for decks with only 2–3 slides. After spending time deep in the code, you will see what you expect rather than what actually rendered. Fresh eyes catch more.
+### Optional visual QA tools
 
-Render slides to images (see [Rendering to Images](#rendering-to-images)), then provide subagents with this prompt:
+For the optional visual check in Step 4:
 
-```
-Examine these slide images carefully. Work under the assumption that problems exist — your job is to locate them.
+- **LibreOffice** (`soffice`) — for PPTX → PDF conversion
+- **Poppler** (`pdftoppm`) — for PDF → image rendering
 
-Check for:
-- Overlapping content (text bleeding through shapes, lines crossing words, stacked items)
-- Truncated or overflowing text at edges or container boundaries
-- Decorative elements sized for single-line headings that now wrap to two lines
-- Source attributions or footers colliding with body content
-- Cramped spacing (< 0.3" between elements) or unbalanced whitespace
-- Content pushed too close to slide edges (< 0.5" margin)
-- Misaligned columns or parallel elements
-- Hard-to-read text (light text on pale backgrounds, etc.)
-- Hard-to-see icons (dark icons against dark backgrounds without contrasting circles)
-- Overly narrow text boxes causing excessive line wrapping
-- Unreplaced placeholder content
+If these are not available, skip the visual check and state this explicitly in the QA note at delivery.
 
-For every slide, enumerate any concerns — even minor ones.
+## Step 3 — Write the generator
 
-Inspect the following images:
-1. /path/to/slide-01.jpg (Expected: [brief description])
-2. /path/to/slide-02.jpg (Expected: [brief description])
+Produce a single self-contained `generate.py` in the workspace. The script must:
 
-Report everything you find.
-```
+- Use `python-pptx` exclusively.
+- Define a small palette object (one dominant, one or two supporting, one accent) chosen for the topic. Never default to generic blue unless the topic is genuinely blue-coded.
+- Use a recurring visual motif across slides (e.g., side accent bar, numbered chip, soft card with subtle border).
+- Set `text_frame.word_wrap = True` and `MSO_AUTO_SIZE.NONE` on every text box, then check `len(text)` against a per-box character budget. If a string would clearly overflow, truncate or rebalance before render — do not rely on a post-process script.
+- Use `Inches`, `Pt`, and `RGBColor` for measurements.
+- For CJK content, set both `font.name` and the `<a:ea>` East Asian font (see `references/python_pptx_recipes.md`) and prefer Source Han Sans / Microsoft YaHei / PingFang SC.
+- After building all slides, call `save_pptx(prs, path)` (defined in `references/python_pptx_skeleton.py`) instead of `prs.save(path)`. This wrapper saves the file and automatically strips the blank placeholder thumbnail that python-pptx inherits from its built-in template. **Never call `prs.save()` directly** — if you do, the preview card will show a white image instead of a text summary.
 
-### Iterative Verification
+Name the output file descriptively based on the topic and save it under the `outputs/` subdirectory (e.g., `outputs/AI趋势分析.pptx`, `outputs/Q3-Sales-Review.pptx`). Do not use generic names like `output.pptx`. The `outputs/` folder is where users can see files — files saved outside it are invisible to them.
 
-1. Generate the deck → render images → inspect
-2. **Document every issue found** (if the list is empty, look harder)
-3. Apply fixes
-4. **Re-check the affected slides** — one correction frequently introduces another
-5. Loop until a complete pass surfaces no new problems
+A ready-to-adapt template lives at `references/python_pptx_skeleton.py`. Common patterns (cover, two-column, stat callout, comparison, timeline, closing) live at `references/python_pptx_recipes.md`.
 
-**Do not declare the work finished until at least one fix-then-verify cycle has completed.**
+## Step 4 — Execute & self-correct
 
----
-
-## Rendering to Images
-
-Convert the final `.pptx` into per-slide images for visual review:
+Run the generator:
 
 ```bash
-python scripts/office/soffice.py --headless --convert-to pdf output.pptx
-pdftoppm -jpeg -r 150 output.pdf slide
+python generate.py
 ```
 
-This produces `slide-01.jpg`, `slide-02.jpg`, and so on.
+Then run a tight inline QA pass — no separate gate scripts:
 
-To re-render only specific slides after corrections:
+- **Open check** — confirm the file exists and is non-empty.
+- **Content check** — `python -m markitdown <output>.pptx` and scan for the topic's key terms, leftover `xxxx`/`Lorem`, and obvious typos.
+- **Overflow check** — re-read the script's per-box character budgets; if any string exceeded the budget, fix and rerun.
+- **Visual check (when worth the cost)** — for ≥8 slide decks or when the deck is high-stakes, convert via `soffice` + `pdftoppm` and spot-check the cover, one dense slide, and the closer. Skip for short, low-risk decks.
 
-```bash
-pdftoppm -jpeg -r 150 -f N -l N output.pdf slide-fixed
+P0 issues (overflow, file corruption, missing user content, invented numbers, typos, orphan CJK breaks) block delivery. Fix and rerun. P1 (weak hierarchy, repeated layouts, generic icons) should be fixed unless explicitly out of scope. P2 (minor alignment, spacing drift) is polish.
+
+Never claim the deck is done while a P0 remains.
+
+## Step 5 — Deliver
+
+Call the `present_files` tool with the generated `.pptx` file path. This automatically copies the file to the outputs folder and makes it visible in the artifacts panel. Then write a one-paragraph QA note listing which checks ran and any non-blocking caveats (e.g., "visual spot-check skipped for a 6-slide internal deck"). Do not write a long postamble.
+
+## Design quick reference
+
+One dominant color (60–70% weight), one or two support tones, one sharp accent. Commit to a motif: side accent bar, numbered chip, framed image, or recurring data card. Keep heading font and body font distinct. Default safe pairs:
+
+- Latin: Calibri / Calibri Light, Arial / Arial Narrow, Georgia / Calibri.
+- CJK: Microsoft YaHei / Microsoft YaHei Light, Source Han Sans Bold / Source Han Sans Regular, PingFang SC Semibold / PingFang SC Regular.
+
+Avoid AI-slop patterns: thin accent lines under titles, fully centered body text, identical 2×2 card grids on every slide, pure-color circular pseudo-icons, generic gradient blobs, orphan CJK characters at line ends, dense bullet slides without any visual structure.
+
+## python-pptx essentials
+
+```python
+from pptx import Presentation
+from pptx.util import Inches, Pt, Emu
+from pptx.dml.color import RGBColor
+from pptx.enum.text import MSO_AUTO_SIZE, PP_ALIGN
+from pptx.enum.shapes import MSO_SHAPE
+
+prs = Presentation()
+prs.slide_width = Inches(13.333)
+prs.slide_height = Inches(7.5)
+
+slide = prs.slides.add_slide(prs.slide_layouts[6])  # blank
+
+tb = slide.shapes.add_textbox(Inches(0.6), Inches(0.5), Inches(12.1), Inches(1.1))
+tf = tb.text_frame
+tf.word_wrap = True
+tf.auto_size = MSO_AUTO_SIZE.NONE
+p = tf.paragraphs[0]
+p.alignment = PP_ALIGN.LEFT
+r = p.add_run()
+r.text = "Slide title"
+r.font.name = "Calibri"
+r.font.size = Pt(36)
+r.font.bold = True
+r.font.color.rgb = RGBColor(0x1E, 0x27, 0x61)
+
+save_pptx(prs, "outputs/Your-Topic-Name.pptx")  # 根据主题命名，必须存到 outputs/ 下
 ```
 
----
+> `save_pptx(prs, path)` 定义在 `references/python_pptx_skeleton.py`，生成脚本中必须复制该函数。禁止直接调用 `prs.save()`。
 
-## Required Packages
+The correct import for `RGBColor` is `from pptx.dml.color import RGBColor`. Use `MSO_AUTO_SIZE.NONE` + `word_wrap=True` to keep text boxes the size you defined, then enforce length budgets in the script itself.
 
-- `pip install "markitdown[pptx]"` — text extraction
-- `pip install Pillow` — thumbnail generation
-- `npm install -g pptxgenjs` — scratch presentation creation
-- LibreOffice (`soffice`) — PDF conversion (sandboxed environments handled automatically by `scripts/office/soffice.py`)
-- Poppler (`pdftoppm`) — PDF-to-image conversion
+## References
+
+- `references/python_pptx_skeleton.py` — a working starter generator with palette, motif, cover, content, stat-callout, and closing slides.
+- `references/python_pptx_recipes.md` — copy-paste recipes: two-column, comparison, timeline, stat grid, chart, CJK typography.
+- `references/editing.md` — the three-step path for editing existing `.pptx` files: read structure → write modify script → markitdown verify.
+
+## Delivery standard
+
+Call `present_files` with the final `.pptx` path, then write a one-paragraph QA note. Never deliver a deck with P0 issues. State explicitly which inline QA checks ran and which were skipped.

@@ -22,6 +22,17 @@ import zipfile
 
 import defusedxml.minidom
 
+
+def _force_utf8_stdio():
+    """Force UTF-8 on stdout/stderr so Chinese paths and messages print correctly
+    when invoked as a CLI script via pipe (upper framework decodes as UTF-8)."""
+    for _stream in (sys.stdout, sys.stderr):
+        if hasattr(_stream, "reconfigure"):
+            try:
+                _stream.reconfigure(encoding="utf-8", errors="replace")
+            except Exception:
+                pass
+
 from helpers.merge_runs import merge_runs as _coalesce_runs
 from helpers.simplify_redlines import simplify_redlines as _compact_redlines
 
@@ -112,6 +123,7 @@ def unpack(
 # ── CLI entry point ──────────────────────────────────────────────────────────
 
 if __name__ == "__main__":
+    _force_utf8_stdio()
     ap = argparse.ArgumentParser(
         description="Unpack an Office file (DOCX, PPTX, XLSX) for editing"
     )

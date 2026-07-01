@@ -1,11 +1,11 @@
 ---
 name: reconcile-skill
-description: 用于执行采购入库、其他入库、其他出库三类 FMS 与 IOM 的数据核对。当用户提到采购核对、其他入库核对、其他出库核对、按时间范围核对、FMS/IOM 对账、排查差异单号时使用。
+description: 用于执行 FMS 与 IOM 的采购入库、其他入库、其他出库、退货应收、无单退货入库、销售出库核对。当用户提到按时间范围核对、FMS/IOM 对账、排查差异单号、发送核对结果时使用。
 ---
 
 # 对账技能
 
-本技能用于执行以下三类核对：
+本技能用于执行以下六类核对：
 
 1. 采购入库核对
 2. 其他入库核对
@@ -41,10 +41,23 @@ Python 路径：
 - 保留白名单仓库：
   `WH0882, WH0388, WH0390, WH0237, WH0494`
 
+### 普通销售业务日志产销过滤规则
+
+- 适用于读取 `fms_cost.psi_sales` 的核对：销售出库、退货应收入库单、无单退货入库单。
+- 与 FMS 最新代码保持一致：普通销售业务日志剔除属于产销/工厂的数据。
+- 工厂仓判断：关联仓库 `warehouse_use_type = 4` 时剔除。
+- 工厂店铺判断：店铺所属组织名称包含“产销”且 `department_attribute = 2` 时剔除。
+- 空店铺或未匹配到店铺组织时，不能按产销店铺剔除；脚本使用 `COALESCE` 处理空值，只在明确命中产销组织时排除。
+- 被普通 `psi_sales` 剔除的产销/工厂销售数据，转到 `fms_cost.psi_factory_sales` 继续参与对应核对。
+- `psi_factory_sales` 中的生产类来源暂不参与当前 6 类核对，包括：
+  `psi_data_from_type = 15` 工厂-生产发货、`16` 工厂-生产发货拒收、`17` 工厂-生产销退。
+- 这些生产类来源需要后续单独按 MES/生产发货/生产销退来源表建立核对，不混入当前销售出库、退货应收、无单退货口径。
+- 采购入库、其他入库、其他出库使用各自采购/其他出入库日志表，脚本已分别接入普通和工厂来源，不套用普通销售日志过滤。
+
 ## 采购入库核对
 
 脚本：
-`C:\Users\lqc\.codex\skills\reconcile-skill\scripts\purchase_in_stock_reconcile.py`
+`/Users/liuqingchen/.codex/skills/reconcile-skill/scripts/purchase_in_stock_reconcile.py`
 
 规则：
 
@@ -55,7 +68,9 @@ Python 路径：
 - 工厂采购明细展示与对账使用 `stock_order_code`
 - IOM 明细使用 `stock_order_code`
 - IOM 数量使用：
-  `actual_num + defective_actual_num`
+  `PRK` 开头单据使用 `arrive_num + arrive_defective_num`
+- IOM 数量使用：
+  `PCK` 和其他单据使用 `actual_num + defective_actual_num`
 - 采购退货分组使用 `refund_num`
 - 其他采购分组使用 `num`
 - 当前退款数量分组：
@@ -107,7 +122,7 @@ Python 路径：
 
 规则：
 
-- FMS 来源：`fms_cost.psi_sales`
+- FMS 来源：`fms_cost.psi_sales` + `fms_cost.psi_factory_sales`
 - IOM 来源：`erp_iom.return_order` + `erp_iom.return_order_detail`
 - FMS 时间字段使用 `business_date`
 - IOM 时间字段使用 `arrive_time`
@@ -120,6 +135,10 @@ Python 路径：
   `order_status in (40, 50, 60, 70)`
 - FMS 仅取分组：
   `131,132,133,146,152,153,154,155,167,176,177,181,182,183,184,185,186,187,188`
+- FMS 工厂销售分组：
+  `422,423,424,425,436,450,451,452,453,454,455,456,457`
+- FMS 工厂销售来源限制：
+  `psi_data_from_type = 5`
 - FMS 过滤空仓库：
   `in_warehouse_code != ''`
 
@@ -162,7 +181,7 @@ Python 路径：
 
 规则：
 
-- FMS 来源：`fms_cost.psi_sales`
+- FMS 来源：`fms_cost.psi_sales` + `fms_cost.psi_factory_sales`
 - IOM 来源：`erp_iom.no_order_inbound_order` + `erp_iom.sub_no_order_inbound_order`
 - FMS 时间字段使用 `business_date`
 - IOM 时间字段使用 `arrive_time`
@@ -174,6 +193,13 @@ Python 路径：
 - IOM 仅取状态：
   `status in (10, 20, 30, 40)`
 - FMS 仅取来源：
+  `psi_data_from_type = 4`
+- FMS 工厂销售分组：
+  `426,427,428,435,438,439`
+- FMS 工厂销售分组按普通 `psi_sales` 口径过滤，当前不纳入工厂“后续关联”和“无头”分组：
+  `429,430,431,432,433,434,440,449`
+- 普通 `psi_sales` 枚举注意：`127 = 无单退货未关联`，`157 = 无单退货当日关联-售后`，不要混用。
+- FMS 工厂销售来源限制：
   `psi_data_from_type = 4`
 - FMS 过滤空仓库：
   `in_warehouse_code != ''`
@@ -191,7 +217,7 @@ Python 路径：
 
 规则：
 
-- FMS 来源：`fms_cost.psi_sales`
+- FMS 来源：`fms_cost.psi_sales` + `fms_cost.psi_factory_sales`
 - IOM 来源：`erp_iom.delivery_order` + `erp_iom.sub_delivery_order`
 - FMS 时间字段使用 `business_date`
 - IOM 时间字段使用 `warehouse_delivery_time`
@@ -205,6 +231,10 @@ Python 路径：
   `WH0882, WH0388, WH0390, WH0237, WH0494`
 - FMS 仅取分组：
   `142,120,102,141,140,137,135,118,117,113,108,110,148,149,169,170,171,172,106`
+- FMS 工厂销售分组：
+  `402,404,405,406,407,408,410,412,413`
+- FMS 工厂销售来源限制：
+  `psi_data_from_type = 1`
 
 ### 跑 3 月销售出库
 
