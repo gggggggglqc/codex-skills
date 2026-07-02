@@ -150,41 +150,44 @@ def fetch_psi_sales(month, shop_code=None):
             total_refund += refund
             total_cnt += cnt
 
-    # Group breakdown (monthly aggregation)
-    sql_group = f"""
-    SELECT psi_group_type,
-           COUNT(*) AS cnt,
-           SUM(income_fee) AS total_income_fee,
-           SUM(refund_amount) AS total_refund
-    FROM psi_sales
-    WHERE business_date >= %s AND business_date <= %s
-      AND psi_group_type IN ({PSI_GROUP_TYPE_IN})
-      {shop_filter}
-    GROUP BY psi_group_type
-    ORDER BY psi_group_type
-    """
-    year, mon = month.split("-")
-    start_dt = f"{year}-{mon}-01"
-    for d in range(31, 0, -1):
-        try:
-            datetime(int(year), int(mon), d)
-            end_dt = f"{year}-{mon}-{d:02d}"
-            break
-        except ValueError:
-            continue
-    with conn.cursor() as cur:
-        cur.execute(sql_group, [start_dt, end_dt] + params_extra)
-        for r in cur.fetchall():
-            gt = r["psi_group_type"]
-            inc = Decimal(r["total_income_fee"] or 0)
-            refund = Decimal(r["total_refund"] or 0)
-            by_group[str(gt)] = {
-                "name": GROUP_NAMES.get(gt, "?"),
-                "cnt": r["cnt"],
-                "income_fee": float(inc),
-                "refund_amount": float(refund),
-                "net_income": float(inc - refund),
-            }
+    # Group breakdown — aggregate day-by-day to avoid full-month GROUP BY timeout
+    for year, mon, day in get_days(month):
+        dt = f"{year}-{mon}-{day:02d}"
+        sql_group = f"""
+        SELECT psi_group_type,
+               COUNT(*) AS cnt,
+               SUM(income_fee) AS total_income_fee,
+               SUM(refund_amount) AS total_refund
+        FROM psi_sales
+        WHERE business_date = %s
+          AND psi_group_type IN ({PSI_GROUP_TYPE_IN})
+          {shop_filter}
+        GROUP BY psi_group_type
+        """
+        with conn.cursor() as cur:
+            cur.execute(sql_group, [dt] + params_extra)
+            for r in cur.fetchall():
+                gt = r["psi_group_type"]
+                gt_key = str(gt)
+                if gt_key not in by_group:
+                    by_group[gt_key] = {
+                        "name": GROUP_NAMES.get(gt, "?"),
+                        "cnt": 0,
+                        "income_fee": Decimal(0),
+                        "refund_amount": Decimal(0),
+                        "net_income": Decimal(0),
+                    }
+                inc = Decimal(r["total_income_fee"] or 0)
+                refund = Decimal(r["total_refund"] or 0)
+                by_group[gt_key]["cnt"] += r["cnt"]
+                by_group[gt_key]["income_fee"] += inc
+                by_group[gt_key]["refund_amount"] += refund
+                by_group[gt_key]["net_income"] += inc - refund
+
+    # Convert Decimal to float for JSON serialization
+    for gt_key in by_group:
+        for k in ("income_fee", "refund_amount", "net_income"):
+            by_group[gt_key][k] = float(by_group[gt_key][k])
 
     conn.close()
     return {
