@@ -16,6 +16,7 @@ Start from the latest rule set unless the user specifies an older version:
 3. Use `新增费用名称字典表` for EP 编码到费用/科目的映射.
 4. Use `业务上传临时表` for人工、研发、集团管理、分摊费用、费比和费用金额的上传规则.
 5. When the question needs exact business logic, read [references/t1-net-profit-rules.md](references/t1-net-profit-rules.md).
+6. When the question asks for field-level logic, page-field summaries, or the relationship between 老板报表 and T+1 净利 fields, read [references/boss-report-t1-field-logic.md](references/boss-report-t1-field-logic.md).
 
 The source workbook did not contain a literal sheet named `sheet1`; the rules were整理 from all named sheets except no literal `sheet1`.
 
@@ -31,6 +32,7 @@ The source workbook did not contain a literal sheet named `sheet1`; the rules we
    - 科目费用分摊: use `dp_dws.doris_dws_finance_cost_sbjct` and `dp_dws.doris_dws_finance_cost_sbjct_failure`.
    - 净利汇总: use `doris_app_net_profit_check_report_v2`.
    - 业务上传: use the temporary upload table rules; blank uploads become 0 in the net profit table.
+   - 字段逻辑总览: use `references/boss-report-t1-field-logic.md` for 老板报表页面字段、T+1 净利字段、EP 编码、税后净利、上传规则和排查清单.
 
 3. Apply the common allocation hierarchy.
    - SKU income/cost/volume is allocated to suppliers by `dp_dws.doris_dws_srm_purchase_num_percentage_mid`.
