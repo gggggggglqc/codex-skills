@@ -15,6 +15,7 @@ Use this skill to turn messy inputs into a concise product requirement document 
 4. Put the actual requirement content only in `3.产品设计：` when drafting a ZenTao requirement.
 5. Separate frontend and backend impact. Prefix the ZenTao title with `【前端】`, `【后端】`, or `【前端+后端】`.
 6. The title must briefly list each functional change point, separated by `；`.
+7. When creating or updating ZenTao, preserve formatting by submitting the requirement body as HTML, not plain Markdown or plain text. Use headings for the fixed sections and ordered lists for numbered requirement items.
 
 ## Workflow
 
@@ -33,7 +34,17 @@ Use this skill to turn messy inputs into a concise product requirement document 
 4. After confirmation:
    - If the user asks for ZenTao creation, use `zentao-api`.
    - Create a Story unless the user specifies Epic or Requirement.
-   - Pass `productID`, `title`, `grade`, `pri`, and `spec`.
+   - Pass `productID`, `title`, `grade`, `pri`, and HTML-formatted `spec`.
+
+## ZenTao Formatting Rule
+
+When publishing to ZenTao, convert the fixed template to HTML before submission so the page keeps readable structure:
+
+- Top-level sections `1.需求背景：` through `10.潜在风险` use `<h3>...</h3>`.
+- `一.修改功能点` and each `（n）修改功能点` use `<h4>...</h4>`.
+- Numbered items under each function point use `<ol><li>...</li></ol>`.
+- Blank non-product-design sections may be submitted as empty headings, but do not fill them with `无` or `待确认` unless the user asks.
+- Do not submit Markdown markers such as `###`, `-`, or raw line breaks only; old ZenTao may display them as one compressed paragraph.
 
 ## Word Output Format
 

@@ -27,25 +27,92 @@ metadata:
 
 ## 认证流程
 
-所有业务 API 需在 Header 携带 `token`。运行 `scripts/get-token.sh` 自动获取：
+运行 `scripts/get-token.sh` 自动获取鉴权信息：新版禅道输出 `ZENTAO_TOKEN`，老版禅道输出 `ZENTAO_AUTH_MODE=legacy` 和 session 信息。
 
 ```bash
 eval "$(bash scripts/get-token.sh)"
-# 执行后可直接使用 $ZENTAO_URL、$ZENTAO_TOKEN、$ZENTAO_ACCOUNT
+# v2 成功时可直接使用 $ZENTAO_URL、$ZENTAO_TOKEN、$ZENTAO_ACCOUNT
+# 老版禅道成功时可直接使用 $ZENTAO_URL、$ZENTAO_AUTH_MODE=legacy、$ZENTAO_SESSION_NAME、$ZENTAO_SESSION_ID、$ZENTAO_ACCOUNT
 ```
 
 脚本依赖：`curl`、`node`
 
-后续所有请求 Header 携带：`token: $ZENTAO_TOKEN`
+新版禅道后续请求 Header 携带：`token: $ZENTAO_TOKEN`；老版禅道后续请求使用 cookie：`-b "$ZENTAO_SESSION_NAME=$ZENTAO_SESSION_ID"`。
+
+### 老版禅道回退（重要）
+
+如果 `$ZENTAO_URL/api.php/v2/users/login` 返回 `{"errcode":401,"errmsg":"缺少code参数"}`，说明当前实例不是可用的 v2 token 登录方式，**不要直接报错或反复要求用户提供账号密码**。改用老版禅道 session 流程：
+
+1. 调用 `GET $ZENTAO_URL/api-getsessionid.json`，解析 `data.sessionName` 和 `data.sessionID`。
+2. 调用 `GET $ZENTAO_URL/user-login.json?$sessionName=$sessionID&account=$ZENTAO_ACCOUNT&password=$ZENTAO_PASSWORD`。
+3. 后续网页/老版接口请求使用 cookie：`-b "$sessionName=$sessionID"`。
+4. 创建需求时优先走网页表单：先读取 `story-create-<productID>-0-0.html` 获取字段和选项，再用 `multipart/form-data` 提交。
+5. 提交后可能返回空内容，这是老版 `hiddenwin` 提交的正常现象；必须回到需求列表按标题或 ID 反查确认。
+6. `spec`、`verify`、`comment` 等富文本字段必须提交 HTML 字符串来保留格式；不要只提交 Markdown 或纯文本换行。
+
+本地已验证的老版实例规则：
+
+| 场景 | 值 |
+|------|----|
+| 产品 | `ERP/财务系统-FMS`，`productID=3` |
+| FMS6.4 计划 | `plan=1090` |
+| 总账模块 | `/fms总账`，`module=724` |
+| 创建页 | `/story-create-3-0-0.html` |
+| 验证页 | `/product-browse-3-0.html` |
+
+老版创建需求的最小字段：
+
+```bash
+curl -sS -L -b "$ZENTAO_SESSION_NAME=$ZENTAO_SESSION_ID" \
+  -X POST "$ZENTAO_URL/story-create-3-0-0.html" \
+  -F "uid=$(date +%s%3N)" \
+  -F "product=3" \
+  -F "module=724" \
+  -F "plan=1090" \
+  -F "assignedTo=$ZENTAO_ACCOUNT" \
+  -F "needNotReview=1" \
+  -F "title=$TITLE" \
+  -F "pri=3" \
+  --form-string "spec=$SPEC_HTML" \
+  -F "verify=" \
+  -F "status=draft" \
+  -F "type=story"
+```
+
+验证创建结果：
+
+```bash
+curl -sS -L -b "$ZENTAO_SESSION_NAME=$ZENTAO_SESSION_ID" \
+  "$ZENTAO_URL/product-browse-3-0.html" | rg "$TITLE|story-view-[0-9]+"
+```
+
+老版更新需求正文/格式时使用“变更需求”页面，不要使用普通编辑页：
+
+```bash
+curl -sS -L -b "$ZENTAO_SESSION_NAME=$ZENTAO_SESSION_ID" \
+  -X POST "$ZENTAO_URL/story-change-<storyID>.html" \
+  --form-string "uid=$(date +%s%3N)" \
+  --form-string "assignedTo=" \
+  --form-string "needNotReview[]=0" \
+  --form-string "status=active" \
+  --form-string "title=$TITLE" \
+  --form-string "spec=$SPEC_HTML" \
+  --form-string "verify=$VERIFY_HTML" \
+  --form-string "comment=$COMMENT" \
+  --form-string "lastEditedDate=0000-00-00 00:00:00"
+```
+
+注意：当字段值以 `<h3>`、`<p>` 等 HTML 标签开头时，必须使用 `--form-string`，不要用 `-F "spec=$SPEC_HTML"`；否则 `curl` 会把 `<...` 误判为本地文件读取，导致 `Failed to open/read local data from file/application`。
 
 ## 执行 API 调用的步骤
 
 1. 运行 `eval "$(bash scripts/get-token.sh)"` 获取凭证（自动处理缓存；仍缺失时提示用户）
-2. 根据用户意图选择正确的 API 端点（参见 [api-reference.md](api-reference.md)）
-3. 若为 PUT 编辑操作且用户未提供全部必填字段，先调用对应 GET 详情接口取回当前数据，再将用户指定的字段覆盖进去
-4. 构造请求（方法、URL、Header、Body）并向用户确认写操作内容
-5. 执行请求，解析响应
-6. 以清晰易读的格式向用户展示结果
+2. 如果 `ZENTAO_AUTH_MODE=legacy`，按“老版禅道回退”使用 session cookie 和网页表单；否则使用 v2 token API
+3. 根据用户意图选择正确的 API 端点（参见 [api-reference.md](api-reference.md)）
+4. 若为 PUT 编辑操作且用户未提供全部必填字段，先调用对应 GET 详情接口取回当前数据，再将用户指定的字段覆盖进去
+5. 构造请求（方法、URL、Header、Body）并向用户确认写操作内容；需求正文发布到禅道前先转 HTML，避免格式丢失
+6. 执行请求，解析响应
+7. 以清晰易读的格式向用户展示结果
 
 ## 模块总览
 
