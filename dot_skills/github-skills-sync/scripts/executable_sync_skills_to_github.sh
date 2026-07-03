@@ -170,6 +170,15 @@ prune_source_tree "$SOURCE_DIR/dot_codex" \
   -o -path '*/.tmp' -o -path '*/.tmp/*' \
   -o -path '*/sessions' -o -path '*/sessions/*' \
   -o -path '*/logs' -o -path '*/logs/*' \)
+prune_source_tree "$SOURCE_DIR/dot_skills" \
+  \( -path '*/__pycache__' -o -path '*/__pycache__/*' \
+  -o -name '*.pyc' \)
+prune_source_tree "$SOURCE_DIR/dot_codex" \
+  \( -path '*/__pycache__' -o -path '*/__pycache__/*' \
+  -o -name '*.pyc' \)
+prune_source_tree "$SOURCE_DIR/dot_qoderwork" \
+  \( -path '*/__pycache__' -o -path '*/__pycache__/*' \
+  -o -name '*.pyc' \)
 git add .chezmoiignore dot_codex dot_qoderwork dot_skills
 if [[ "$INCLUDE_SYSTEM" -ne 1 && -d dot_skills/dot_system ]]; then
   git rm -r --quiet dot_skills/dot_system
