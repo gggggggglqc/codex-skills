@@ -1,6 +1,7 @@
 ---
 name: srm-ops-product-ordering-report
 description: SRM srm-ops 商品版运营订货报表全流程知识技能。用于回答或整理商品运营订货报表、商品订货策略、货品订货策略、运营预估日销、再订货点、采购建议、采购申请、采购前调拨、内部/外部供应商差异、库存周转指标、业务培训 PPT 口径等问题。明确排除物料版订货规则，除非用户显式要求物料版本。
+version: 1.0.0
 ---
 
 # SRM 商品运营订货报表
@@ -50,3 +51,24 @@ Use business language first. Code names, table names, and method names are suppo
 - Do not call report-created purchase applications "reversible to report row" unless verified. The report id is not persisted on `sub_purchase_apply`; report rows may be cleaned after 30 days.
 - Do not say view permission is status-restricted for purchase applications. Search can filter by status, but detail/list viewing is not inherently blocked by status in `srm-ops`.
 - Do not over-explain Java fields in training material. Convert them into business terms.
+
+---
+
+## 版本管理（遵循数仓文档管理规范v1.0）
+
+> 来源：[数仓文档管理规范v1.0](https://alidocs.dingtalk.com/i/nodes/QOG9lyrgJP3PAm3kuvy0z6E3VzN67Mw4)
+
+### 版本说明
+
+| 版本号 | 版本内容 | 上线状态 | 上线时间 | 维护人 | 备注 |
+|--------|----------|----------|----------|--------|------|
+| V1.0.0 | 初始版本，录入核心规则与核对流程 | 已上线 | 2026-07-06 | QoderWork | 按数仓文档管理规范v1.0补充版本管理章节 |
+
+### 版本更新规则
+
+1. **版本号**：与禅道版本号保持一致（如 V1.0.0、V1.1.0、V2.0.0）
+2. **Sheet 命名**：指标说明按"版本号 + 简述"格式（如 `V1.1.0 口径调整`）
+3. **变更标识**：本期新增或修改内容使用**红色字体**标识；删除内容使用~~画线~~处理
+4. **历史版本**：只隐藏不删除，便于追溯
+5. **额外说明**：绑定版本号，格式为 `【V1.x.0 额外说明】`
+6. **更新流程**：复制上一版本 → 修改本期内容（标红）→ 更新版本说明 → 检查额外说明 → 隐藏历史版本 → 上线后更新状态
