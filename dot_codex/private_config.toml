@@ -2,7 +2,7 @@ notify = ["/Users/liuqingchen/.codex/computer-use/Codex Computer Use.app/Content
 service_tier = "default"
 
 [marketplaces.openai-bundled]
-last_updated = "2026-07-03T01:49:54Z"
+last_updated = "2026-07-07T00:35:28Z"
 source_type = "local"
 source = "/Users/liuqingchen/.codex/.tmp/bundled-marketplaces/openai-bundled"
 
@@ -52,12 +52,12 @@ NODE_REPL_NODE_MODULE_DIRS = "/Applications/Codex.app/Contents/Resources/cua_nod
 NODE_REPL_NODE_PATH = "/Applications/Codex.app/Contents/Resources/cua_node/bin/node"
 NODE_REPL_TRUSTED_CODE_PATHS = "/Users/liuqingchen/.codex"
 CODEX_HOME = "/Users/liuqingchen/.codex"
-NODE_REPL_TRUSTED_BROWSER_CLIENT_SHA256S = "60e4902788f207f88fd09344dfeafe07769488bdb2924bbb12b322c3b9d2b999"
+NODE_REPL_TRUSTED_BROWSER_CLIENT_SHA256S = "97669f77b3ca7114a2df05d55646416ea34b28100c07213ef9f643803449ef2f"
 BROWSER_USE_AVAILABLE_BACKENDS = "chrome,iab"
 NODE_REPL_INSTRUCTIONS_USE_CASE_BROWSER = "Control the in-app browser in conjunction with the Browser Plugin."
 NODE_REPL_INSTRUCTIONS_USE_CASE_CHROME = "Control the Chrome browser in conjunction with the Chrome Plugin. Prefer this method of controlling Chrome over alternatives (such as Computer Use) unless the user explicitly mentions an alternative."
 BROWSER_USE_CODEX_APP_BUILD_FLAVOR = "prod"
-BROWSER_USE_CODEX_APP_VERSION = "26.623.101652"
+BROWSER_USE_CODEX_APP_VERSION = "26.623.141536"
 CODEX_CLI_PATH = "/Applications/Codex.app/Contents/Resources/codex"
 
 [desktop]
