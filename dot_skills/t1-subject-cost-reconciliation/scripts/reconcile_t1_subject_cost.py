@@ -101,6 +101,22 @@ def parse_args():
     return parser.parse_args()
 
 
+def fetch_allowed_expense_cost_codes(doris):
+    with doris.cursor() as cur:
+        cur.execute(
+            """
+            SELECT item.cost_code
+            FROM dp_ods.doris_ods_zcm_cost_item item
+            LEFT JOIN dp_ods.doris_ods_zcm_cost_attribution attr
+              ON item.cost_attribution_id = attr.id
+            WHERE attr.id IN (1, 2, 3, 5, 17, 19)
+              AND item.cost_code IS NOT NULL
+              AND item.cost_code <> ''
+            """
+        )
+        return {row["cost_code"] for row in cur.fetchall()}
+
+
 def fetch_metadata(mysql, subjects, department_id, start_s, end_s):
     with mysql.cursor() as cur:
         shops = None
@@ -124,11 +140,14 @@ def fetch_metadata(mysql, subjects, department_id, start_s, end_s):
             subjects,
         )
         mapping_rows = cur.fetchall()
-        active = [row for row in mapping_rows if str(row.get("is_gather", "1")) != "0"]
-        mapping_source = active or mapping_rows
-        code_to_subject = {row["cost_code"]: row["subject_code"] for row in mapping_source}
+        gathered_rows = [row for row in mapping_rows if str(row.get("is_gather", "1")) != "0"]
+        gathered_subjects = {row["subject_code"] for row in gathered_rows}
+        voucher_subjects = {subject for subject in subjects if subject not in gathered_subjects}
+        code_to_subject = {row["cost_code"]: row["subject_code"] for row in gathered_rows if row["cost_code"]}
         subject_costs = defaultdict(list)
-        for row in mapping_source:
+        for row in gathered_rows:
+            if not row["cost_code"]:
+                continue
             subject_costs[row["subject_code"]].append(row["cost_code"])
 
         cur.execute(
@@ -145,7 +164,7 @@ def fetch_metadata(mysql, subjects, department_id, start_s, end_s):
 
         subject_names = {subject: "" for subject in subjects}
 
-    return shops, code_to_subject, subject_costs, rates, subject_names
+    return shops, code_to_subject, subject_costs, voucher_subjects, rates, subject_names
 
 
 def add_expense_rows(rows, target, label, currency_detail, detail_label, code_to_subject, rates):
@@ -159,23 +178,25 @@ def add_expense_rows(rows, target, label, currency_detail, detail_label, code_to
         currency_detail[(subject, detail_label, currency)] += original_amount
 
 
-def query_fms_expenses(mysql, start, end, shops, cost_codes, code_to_subject, rates, chunk_size, verbose):
+def query_fms_expenses(mysql, start, end, shops, expense_codes, cb_codes, code_to_subject, rates, chunk_size, verbose):
     result = defaultdict(Decimal)
     currency_detail = defaultdict(Decimal)
     shop_chunks = list(chunks(shops.keys(), chunk_size)) if shops is not None else [None]
-    ed_codes = cost_codes
-    if not ed_codes:
+    if not expense_codes and not cb_codes:
         return result, currency_detail
-    expense_tables = [("fms_cost.expense_detail", "expense_detail", "FMS expense original")]
+    expense_tables = []
+    if expense_codes:
+        expense_tables.append(("fms_cost.expense_detail", "expense_detail", "FMS expense original", expense_codes))
     history_table = f"his_expense_detail_{start.year}"
-    if table_exists(mysql, "fms_cost", history_table):
-        expense_tables.append((f"fms_cost.{history_table}", "expense_detail", "FMS expense original"))
-    expense_tables.append(("fms_cost.expense_detail_cb", "expense_detail_cb_cny", "FMS CB original"))
+    if expense_codes and table_exists(mysql, "fms_cost", history_table):
+        expense_tables.append((f"fms_cost.{history_table}", "expense_detail", "FMS expense original", expense_codes))
+    if cb_codes:
+        expense_tables.append(("fms_cost.expense_detail_cb", "expense_detail_cb_cny", "FMS CB original", cb_codes))
     with mysql.cursor() as cur:
         for day_start, day_end in iter_days(start, end):
             day_start_s = str(day_start)
             day_end_s = str(day_end)
-            for table_name, label, detail_label in expense_tables:
+            for table_name, label, detail_label, query_codes in expense_tables:
                 for shop_chunk in shop_chunks:
                     shop_filter = ""
                     shop_params = []
@@ -183,7 +204,7 @@ def query_fms_expenses(mysql, start, end, shops, cost_codes, code_to_subject, ra
                         shop_placeholders = ",".join(["%s"] * len(shop_chunk))
                         shop_filter = f"AND shop_code IN ({shop_placeholders})"
                         shop_params = list(shop_chunk)
-                    code_placeholders = ",".join(["%s"] * len(ed_codes))
+                    code_placeholders = ",".join(["%s"] * len(query_codes))
                     cur.execute(
                         f"""
                         SELECT trans_dt, cost_code, COALESCE(currency_code, 'CNY') AS currency_code,
@@ -195,7 +216,7 @@ def query_fms_expenses(mysql, start, end, shops, cost_codes, code_to_subject, ra
                           AND cost_code IN ({code_placeholders})
                         GROUP BY trans_dt, cost_code, COALESCE(currency_code, 'CNY')
                         """,
-                        [day_start_s, day_end_s] + shop_params + ed_codes,
+                        [day_start_s, day_end_s] + shop_params + query_codes,
                     )
                     add_expense_rows(cur.fetchall(), result, label, currency_detail, detail_label, code_to_subject, rates)
             if verbose and day_start.day in (1, 10, 20, 31):
@@ -203,20 +224,22 @@ def query_fms_expenses(mysql, start, end, shops, cost_codes, code_to_subject, ra
     return result, currency_detail
 
 
-def query_mid_expenses(doris, start, end, shops, cost_codes, code_to_subject, rates, chunk_size, verbose):
+def query_mid_expenses(doris, start, end, shops, expense_codes, cb_codes, code_to_subject, rates, chunk_size, verbose):
     result = defaultdict(Decimal)
     currency_detail = defaultdict(Decimal)
     shop_chunks = list(chunks(shops.keys(), chunk_size)) if shops is not None else [None]
-    if not cost_codes:
+    if not expense_codes and not cb_codes:
         return result, currency_detail
+    expense_tables = []
+    if expense_codes:
+        expense_tables.append(("dp_ods.doris_ods_upload_expense_detail", "ods_expense_detail", "ODS expense original", expense_codes))
+    if cb_codes:
+        expense_tables.append(("dp_ods.doris_ods_fms_cost_expense_detail_cb", "ods_expense_detail_cb_cny", "ODS CB original", cb_codes))
     with doris.cursor() as cur:
         for day_start, day_end in iter_days(start, end):
             day_start_s = str(day_start)
             day_end_s = str(day_end)
-            for table_name, label, detail_label in [
-                ("dp_ods.doris_ods_upload_expense_detail", "ods_expense_detail", "ODS expense original"),
-                ("dp_ods.doris_ods_fms_cost_expense_detail_cb", "ods_expense_detail_cb_cny", "ODS CB original"),
-            ]:
+            for table_name, label, detail_label, query_codes in expense_tables:
                 for shop_chunk in shop_chunks:
                     shop_filter = ""
                     shop_params = []
@@ -224,7 +247,7 @@ def query_mid_expenses(doris, start, end, shops, cost_codes, code_to_subject, ra
                         shop_placeholders = ",".join(["%s"] * len(shop_chunk))
                         shop_filter = f"AND shop_code IN ({shop_placeholders})"
                         shop_params = list(shop_chunk)
-                    code_placeholders = ",".join(["%s"] * len(cost_codes))
+                    code_placeholders = ",".join(["%s"] * len(query_codes))
                     cur.execute(
                         f"""
                         SELECT trans_dt, cost_code, COALESCE(currency_code, 'CNY') AS currency_code,
@@ -236,7 +259,7 @@ def query_mid_expenses(doris, start, end, shops, cost_codes, code_to_subject, ra
                           AND cost_code IN ({code_placeholders})
                         GROUP BY trans_dt, cost_code, COALESCE(currency_code, 'CNY')
                         """,
-                        [day_start_s, day_end_s] + shop_params + cost_codes,
+                        [day_start_s, day_end_s] + shop_params + query_codes,
                     )
                     add_expense_rows(cur.fetchall(), result, label, currency_detail, detail_label, code_to_subject, rates)
             if verbose and day_start.day in (1, 10, 20, 31):
@@ -251,103 +274,130 @@ def main():
     end_s = str(end)
     subjects = args.subject
 
+    doris = connect("doris", "dp_dws")
+    try:
+        allowed_expense_codes = fetch_allowed_expense_cost_codes(doris)
+    finally:
+        doris.close()
+
     mysql = connect("erp-mysql", "fms_bill")
     try:
-        shops, code_to_subject, subject_costs, rates, subject_names = fetch_metadata(
+        shops, code_to_subject, subject_costs, voucher_subjects, rates, subject_names = fetch_metadata(
             mysql, subjects, args.department_id, start_s, end_s
         )
-        all_cost_codes = sorted(code_to_subject)
+        code_to_subject = {
+            code: subject
+            for code, subject in code_to_subject.items()
+            if code in allowed_expense_codes
+        }
+        for subject, codes in list(subject_costs.items()):
+            subject_costs[subject] = [code for code in codes if code in allowed_expense_codes]
+        expense_codes = sorted(code_to_subject)
+        cb_codes = sorted(code for code in expense_codes if code != "CI168")
         fms_expenses, fms_currency = query_fms_expenses(
-            mysql, start, end, shops, all_cost_codes, code_to_subject, rates, args.shop_chunk_size, args.verbose
+            mysql, start, end, shops, expense_codes, cb_codes, code_to_subject, rates, args.shop_chunk_size, args.verbose
         )
         fms_vouchers = defaultdict(Decimal)
         with mysql.cursor() as cur:
-            placeholders = ",".join(["%s"] * len(subjects))
+            voucher_subjects = sorted(voucher_subjects)
+            placeholders = ",".join(["%s"] * len(voucher_subjects))
             dept_filter = ""
             dept_params = []
             if args.department_id:
                 dept_filter = "AND FIND_IN_SET(%s, vd.accounting_dimension) > 0"
                 dept_params = [f"2_&_{args.department_id}"]
-            cur.execute(
-                f"""
-                SELECT vd.subject_code,
-                       SUM(vd.debit_standard_currency_amount - vd.credit_standard_currency_amount) AS amount
-                FROM fms_bill.voucher_detail vd
-                JOIN fms_bill.voucher v ON vd.voucher_id = v.voucher_id
-                WHERE v.business_date >= %s AND v.business_date < %s
-                  AND v.account_set = 4
-                  AND vd.subject_code IN ({placeholders})
-                  {dept_filter}
-                GROUP BY vd.subject_code
-                """,
-                [start_s, end_s] + subjects + dept_params,
-            )
-            for row in cur.fetchall():
-                fms_vouchers[row["subject_code"]] += -decimal_value(row["amount"])
+            if voucher_subjects:
+                cur.execute(
+                    f"""
+                    SELECT vd.subject_code,
+                           SUM(vd.debit_standard_currency_amount - vd.credit_standard_currency_amount) AS amount
+                    FROM fms_bill.voucher_detail vd
+                    JOIN fms_bill.voucher v ON vd.voucher_id = v.voucher_id
+                    WHERE v.business_date >= %s AND v.business_date < %s
+                      AND v.account_set = 4
+                      AND vd.subject_code IN ({placeholders})
+                      {dept_filter}
+                    GROUP BY vd.subject_code
+                    """,
+                    [start_s, end_s] + voucher_subjects + dept_params,
+                )
+                for row in cur.fetchall():
+                    fms_vouchers[row["subject_code"]] += -decimal_value(row["amount"])
     finally:
         mysql.close()
 
     doris = connect("doris", "dp_dws")
     try:
         mid_expenses, mid_currency = query_mid_expenses(
-            doris, start, end, shops, all_cost_codes, code_to_subject, rates, args.shop_chunk_size, args.verbose
+            doris, start, end, shops, expense_codes, cb_codes, code_to_subject, rates, args.shop_chunk_size, args.verbose
         )
         mid_vouchers = defaultdict(Decimal)
         down_success = defaultdict(Decimal)
         down_failure = defaultdict(Decimal)
         with doris.cursor() as cur:
-            placeholders = ",".join(["%s"] * len(subjects))
+            placeholders = ",".join(["%s"] * len(voucher_subjects))
             dept_filter = ""
             dept_params = []
             if args.department_id:
                 dept_filter = "AND department_code = %s"
                 dept_params = [args.department_id]
-            cur.execute(
-                f"""
-                SELECT subject_code, SUM(result_amount) AS amount
-                FROM dp_dws.doris_dws_voucher_subject_mid
-                WHERE business_date >= %s AND business_date < %s
-                  {dept_filter}
-                  AND subject_code IN ({placeholders})
-                GROUP BY subject_code
-                """,
-                [start_s, end_s] + dept_params + subjects,
-            )
-            for row in cur.fetchall():
-                mid_vouchers[row["subject_code"]] += -decimal_value(row["amount"])
+            if voucher_subjects:
+                cur.execute(
+                    f"""
+                    SELECT subject_code, SUM(result_amount) AS amount
+                    FROM dp_dws.doris_dws_voucher_subject_mid
+                    WHERE business_date >= %s AND business_date < %s
+                      {dept_filter}
+                      AND subject_code IN ({placeholders})
+                    GROUP BY subject_code
+                    """,
+                    [start_s, end_s] + dept_params + voucher_subjects,
+                )
+                for row in cur.fetchall():
+                    mid_vouchers[row["subject_code"]] += -decimal_value(row["amount"])
 
             dept_filter = ""
             dept_params = []
             if args.department_id:
                 dept_filter = "AND department_id = %s"
                 dept_params = [args.department_id]
-            cur.execute(
-                f"""
-                SELECT subject_code, SUM(share) AS amount
-                FROM dp_dws.doris_dws_finance_cost_sbjct
-                WHERE dt >= %s AND dt < %s
-                  {dept_filter}
-                  AND subject_code IN ({placeholders})
-                GROUP BY subject_code
-                """,
-                [start_s, end_s] + dept_params + subjects,
-            )
-            for row in cur.fetchall():
-                down_success[row["subject_code"]] += decimal_value(row["amount"])
+            source_subjects = [
+                ("0", sorted({subject for subject in code_to_subject.values()})),
+                ("1", voucher_subjects),
+            ]
+            for source, source_subject_list in source_subjects:
+                if not source_subject_list:
+                    continue
+                placeholders = ",".join(["%s"] * len(source_subject_list))
+                cur.execute(
+                    f"""
+                    SELECT subject_code, SUM(share) AS amount
+                    FROM dp_dws.doris_dws_finance_cost_sbjct
+                    WHERE dt >= %s AND dt < %s
+                      {dept_filter}
+                      AND source = %s
+                      AND subject_code IN ({placeholders})
+                    GROUP BY subject_code
+                    """,
+                    [start_s, end_s] + dept_params + [source] + source_subject_list,
+                )
+                for row in cur.fetchall():
+                    down_success[row["subject_code"]] += decimal_value(row["amount"])
 
-            cur.execute(
-                f"""
-                SELECT subject_code, SUM(result_amount) AS amount
-                FROM dp_dws.doris_dws_finance_cost_sbjct_failure
-                WHERE dt >= %s AND dt < %s
-                  {dept_filter}
-                  AND subject_code IN ({placeholders})
-                GROUP BY subject_code
-                """,
-                [start_s, end_s] + dept_params + subjects,
-            )
-            for row in cur.fetchall():
-                down_failure[row["subject_code"]] += decimal_value(row["amount"])
+                cur.execute(
+                    f"""
+                    SELECT subject_code, SUM(result_amount) AS amount
+                    FROM dp_dws.doris_dws_finance_cost_sbjct_failure
+                    WHERE dt >= %s AND dt < %s
+                      {dept_filter}
+                      AND source = %s
+                      AND subject_code IN ({placeholders})
+                    GROUP BY subject_code
+                    """,
+                    [start_s, end_s] + dept_params + [source] + source_subject_list,
+                )
+                for row in cur.fetchall():
+                    down_failure[row["subject_code"]] += decimal_value(row["amount"])
     finally:
         doris.close()
 
