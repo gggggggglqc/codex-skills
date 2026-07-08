@@ -1,0 +1,6 @@
+interface:
+  display_name: "T+1科目费用核对"
+  short_description: "按上中下游与折汇口径核对T+1科目费用"
+  default_prompt: "Use $t1-subject-cost-reconciliation to reconcile a T+1 subject cost for a target month and department."
+policy:
+  allow_implicit_invocation: true
