@@ -1,28 +1,28 @@
 # T+1 科目费用核对 SQL 参考
 
-## Layers
+## 数据层级
 
 上游 FMS:
 
 - `fms_cost.expense_detail`: 普通费用明细，金额 `income_cost - expend_cost`。
-- `fms_cost.his_expense_detail_<year>`: archived ordinary expense detail. Include it for historical months when rows have moved out of current `expense_detail`.
+- `fms_cost.his_expense_detail_<year>`：归档后的普通费用明细。历史月份数据如果已从当前 `expense_detail` 迁出，需要一起纳入。
 - `fms_cost.expense_detail_cb`: CB 费用明细，金额是原币，字段 `currency_code`。
 - `fms_bill.voucher` + `fms_bill.voucher_detail`: FMS 凭证详情，业务报表口径 `account_set = 4`。
 
 中游数仓:
 
-- `dp_ods.doris_ods_upload_expense_detail`: ordinary expense detail ODS.
-- `dp_ods.doris_ods_fms_cost_expense_detail_cb`: CB expense detail ODS.
-- `dp_dws.doris_dws_voucher_subject_mid`: voucher subject middle table.
+- `dp_ods.doris_ods_upload_expense_detail`：普通费用明细 ODS。
+- `dp_ods.doris_ods_fms_cost_expense_detail_cb`：CB 费用明细 ODS。
+- `dp_dws.doris_dws_voucher_subject_mid`：凭证科目中表。
 
 下游:
 
-- `dp_dws.doris_dws_finance_cost_sbjct`: allocation success, amount `share`.
-- `dp_dws.doris_dws_finance_cost_sbjct_failure`: allocation failure, amount `result_amount`.
+- `dp_dws.doris_dws_finance_cost_sbjct`：分摊成功表，金额字段 `share`。
+- `dp_dws.doris_dws_finance_cost_sbjct_failure`：分摊失败表，金额字段 `result_amount`。
 
-## Subject to Cost Item Mapping
+## 科目与费用项目映射
 
-Use:
+使用：
 
 ```sql
 SELECT
@@ -35,12 +35,12 @@ LEFT JOIN fms_cost.cost_item ci ON ci.cost_code = cgs.cost_code
 WHERE cgs.subject_code IN ('6601.36');
 ```
 
-Use `is_gather` to decide source:
+使用 `is_gather` 判断数据来源：
 
-- `is_gather != 0`: collect from expense detail / CB by mapped `cost_code`.
-- `is_gather = 0`, or no gathered mapping for the subject: collect from voucher tables.
+- `is_gather != 0`：按映射的 `cost_code` 从费用明细 / CB 获取。
+- `is_gather = 0`，或科目没有采集映射：从凭证表获取。
 
-Expense detail cost codes must also exist in the ZCM allowed set:
+费用明细的 `cost_code` 还必须在 ZCM 允许范围内：
 
 ```sql
 SELECT item.cost_code, item.cost_name
@@ -50,17 +50,17 @@ LEFT JOIN dp_ods.doris_ods_zcm_cost_attribution attr
 WHERE attr.id IN (1, 2, 3, 5, 17, 19);
 ```
 
-For CB / cross-border expense detail, apply the same allowed set and additionally exclude `CI168`.
+CB / 跨境费用明细同样使用上述允许范围，并且额外排除 `CI168`。
 
-## CB Conversion
+## CB 汇率折算
 
-CB source amount is original currency:
+CB 来源金额是原币：
 
 ```sql
 SUM(income_cost - expend_cost)
 ```
 
-Convert each date/currency bucket with:
+按日期和币别分组后，用以下汇率范围折算：
 
 ```sql
 SELECT source_currency_code, target_currency_code, direct_exchange_rate,
@@ -71,9 +71,9 @@ WHERE target_currency_code = 'CNY'
   AND expiring_date >= '2026-05-01';
 ```
 
-For CNY use rate `1`. For non-CNY use the rate whose date range contains `trans_dt`.
+CNY 汇率按 `1` 处理。非 CNY 使用日期范围覆盖 `trans_dt` 的汇率。
 
-## Voucher Query Pattern
+## 凭证查询模板
 
 ```sql
 SELECT
@@ -89,11 +89,11 @@ WHERE v.business_date >= '2026-05-01'
 GROUP BY vd.subject_code;
 ```
 
-Omit the `FIND_IN_SET` condition when the user does not provide a department scope.
+用户未提供部门范围时，去掉 `FIND_IN_SET` 条件。
 
-## Downstream Query Pattern
+## 下游查询模板
 
-Success:
+成功表：
 
 ```sql
 SELECT subject_code, SUM(share) AS amount
@@ -105,9 +105,9 @@ WHERE dt >= '2026-05-01'
 GROUP BY subject_code;
 ```
 
-Omit `department_id` when the user does not provide a department scope.
+用户未提供部门范围时，去掉 `department_id` 条件。
 
-Failure:
+失败表：
 
 ```sql
 SELECT subject_code, SUM(result_amount) AS amount
@@ -119,11 +119,11 @@ WHERE dt >= '2026-05-01'
 GROUP BY subject_code;
 ```
 
-## Department Attribution Drift
+## 部门归属漂移
 
-Use this when FMS/middle totals match, downstream all-department totals match, but a single department is short or over. It often happens when shops changed departments around the business month.
+当 FMS/中游合计一致、下游全部门合计也一致，但单个部门少或多时使用本节。常见原因是店铺在业务月份前后发生部门变更。
 
-Middle amount for the requested department, subject cost code, shop, and date:
+按指定部门、科目费用项目、店铺、日期查询中游金额：
 
 ```sql
 SELECT
@@ -143,7 +143,7 @@ WHERE e.trans_dt >= '2026-04-01'
 GROUP BY e.trans_dt, e.shop_code;
 ```
 
-Downstream split for the same shops across all departments:
+查询同一批店铺在下游全部门的拆分：
 
 ```sql
 WITH scoped_shops AS (
@@ -174,7 +174,7 @@ GROUP BY d.shop_code, d.department_id
 ORDER BY ABS(SUM(d.share)) DESC;
 ```
 
-Shop organization history around the month:
+查询业务月份前后的店铺组织历史：
 
 ```sql
 SELECT
@@ -191,17 +191,17 @@ GROUP BY shop_code, structure_id
 ORDER BY shop_code, structure_id;
 ```
 
-## Known Example From 2026-05 电商一部
+## 已知案例：2026-05 电商一部
 
-After converting CB using `fms_support.exchange_rate_system`, these subjects reconcile to downstream within decimal precision:
+使用 `fms_support.exchange_rate_system` 折算 CB 后，以下科目与下游可在小数精度内对齐：
 
 - `6601.36` 卖家运费
 - `6601.47.12` 环保费
 - `6601.47.14` 平台罚款
 - `6601.46.01` 直通车
 
-The previous 9w difference on seller freight was caused by comparing CB original currency to downstream standard currency.
+卖家运费曾出现约 9 万差异，原因是拿 CB 原币金额直接和下游本位币金额比较。
 
-## Known Example From 2026-04 电商一部
+## 已知案例：2026-04 电商一部
 
-`1122.01.01 应收账款_国内销售_线上直销` had a department-scoped downstream difference of about `1,909,417.28`. The main driver was `CI168 销售回款`: middle layer for 电商一部 was about `9,939,397.31`, while downstream 电商一部 was about `8,029,841.59`. The missing department amount existed downstream under prior departments: about `1,844,427.12` under 电商九部 and `65,128.60` under 品牌四部. Affected shops had changed to 电商一部 on `2026-04-01`, while downstream kept part of the amount under the previous department.
+`1122.01.01 应收账款_国内销售_线上直销` 在部门范围内的下游差异约 `1,909,417.28`。主因是 `CI168 销售回款`：中游电商一部约 `9,939,397.31`，下游电商一部约 `8,029,841.59`。缺少的部门金额实际存在于下游原部门：电商九部约 `1,844,427.12`，品牌四部约 `65,128.60`。受影响店铺在 `2026-04-01` 转入电商一部，但下游仍有部分金额留在原部门。
