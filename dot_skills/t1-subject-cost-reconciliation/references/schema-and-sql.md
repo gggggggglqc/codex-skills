@@ -52,6 +52,62 @@ WHERE attr.id IN (1, 2, 3, 5, 17, 19);
 
 CB / 跨境费用明细同样使用上述允许范围，并且额外排除 `CI168`。
 
+## 部门+科目 T+1 费用批量核对口径
+
+当用户要求“分部门科目核对 T+1 费用”时，默认只核对采集/费用科目：
+
+1. 从 `fms_support.cost_gather_strategy` 取 `is_gather != 0` 的科目与费用项目映射。
+2. `cost_code` 必须在 ZCM 允许范围内：`attr.id in (1, 2, 3, 5, 17, 19)`。
+3. 普通费用明细来自 `expense_detail` / `doris_ods_upload_expense_detail`。
+4. CB 来自 `expense_detail_cb` / `doris_ods_fms_cost_expense_detail_cb`，需要按 FMS 汇率折本位币，且排除 `CI168`。
+5. 下游只取 `source = '0'`，并合并成功表 `share` 与失败表 `result_amount`。
+6. 部门按店铺业务日期归属：`dp_dim.doris_dim_shop.shop_code = expense.shop_code AND dt = trans_dt`。
+
+过滤采集/费用科目的 SQL：
+
+```sql
+SELECT DISTINCT
+  cgs.subject_code,
+  cgs.cost_code
+FROM fms_support.cost_gather_strategy cgs
+JOIN (
+  SELECT item.cost_code
+  FROM dp_ods.doris_ods_zcm_cost_item item
+  LEFT JOIN dp_ods.doris_ods_zcm_cost_attribution attr
+    ON item.cost_attribution_id = attr.id
+  WHERE attr.id IN (1, 2, 3, 5, 17, 19)
+) allowed ON allowed.cost_code = cgs.cost_code
+WHERE cgs.is_gather != 0;
+```
+
+下游按部门+科目汇总：
+
+```sql
+SELECT
+  department_id,
+  subject_code,
+  SUM(share) AS success_amount
+FROM dp_dws.doris_dws_finance_cost_sbjct
+WHERE dt >= '2026-06-01'
+  AND dt <  '2026-07-01'
+  AND source = '0'
+GROUP BY department_id, subject_code;
+```
+
+```sql
+SELECT
+  department_id,
+  subject_code,
+  SUM(result_amount) AS failure_amount
+FROM dp_dws.doris_dws_finance_cost_sbjct_failure
+WHERE dt >= '2026-06-01'
+  AND dt <  '2026-07-01'
+  AND source = '0'
+GROUP BY department_id, subject_code;
+```
+
+不要把凭证类科目自动混入 T+1 费用批量核对。若用户明确要求“全科目 / 包含凭证”，再扩展到 `source = '1'`，并先抽样确认 `doris_dws_voucher_subject_mid.result_amount` 与下游 `source = '1'` 的方向关系。
+
 ## CB 汇率折算
 
 CB 来源金额是原币：
@@ -205,3 +261,20 @@ ORDER BY shop_code, structure_id;
 ## 已知案例：2026-04 电商一部
 
 `1122.01.01 应收账款_国内销售_线上直销` 在部门范围内的下游差异约 `1,909,417.28`。主因是 `CI168 销售回款`：中游电商一部约 `9,939,397.31`，下游电商一部约 `8,029,841.59`。缺少的部门金额实际存在于下游原部门：电商九部约 `1,844,427.12`，品牌四部约 `65,128.60`。受影响店铺在 `2026-04-01` 转入电商一部，但下游仍有部分金额留在原部门。
+
+## 已知案例：2026-06 部门+科目 T+1 费用
+
+按“采集/费用科目 + 下游 `source = '0'`”口径核对后，FMS、中游、下游成功+失败三方一致：
+
+- 部门+科目行数：`239`
+- 部门数：`14`
+- 科目数：`36`
+- FMS 合计：`10,437.89 万`
+- 中游合计：`10,437.89 万`
+- 下游成功：`10,287.80 万`
+- 下游失败：`150.09 万`
+- 下游成功+失败：`10,437.89 万`
+- FMS vs 中游差异：`0`
+- 中游 vs 下游差异：`0`
+
+如果不做采集/费用科目过滤，把利息支出、社会保险金、税金减免等凭证类科目一起纳入，会产生范围型或方向型假差异。

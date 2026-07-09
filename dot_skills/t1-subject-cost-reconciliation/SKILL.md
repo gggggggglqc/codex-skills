@@ -30,6 +30,8 @@ python3 /Users/liuqingchen/.skills/t1-subject-cost-reconciliation/scripts/reconc
 
 部门是可选条件。只有用户明确提供部门或要求按已知部门范围核对时，才添加 `--department-id <id>`。如果用户没有提供部门，不要限制部门。
 
+如果用户说“核对 T+1 费用”或“按部门+科目核对 T+1 费用”，默认范围是费用采集策略中 `is_gather != 0` 且费用项目在 ZCM 允许范围内的采集/费用科目，并与下游 `source = 0` 比较。不要自动把所有凭证类科目混进“费用”核对；只有用户明确要求“包含凭证类科目 / 全科目 / 凭证中表”时，才扩展到 `source = 1`。
+
 ## 必核范围
 
 核对三层数据：
@@ -66,6 +68,8 @@ python3 /Users/liuqingchen/.skills/t1-subject-cost-reconciliation/scripts/reconc
 - 凭证部门核算维度格式是 `2_&_<department_id>`；店铺维度分隔符是 `4_&_`。
 - 下游成功表金额字段是 `share`；失败表金额字段是 `result_amount`。
 - 下游必须与上游保持相同来源拆分：采集/费用类科目对比 `source = 0`；凭证类科目对比 `source = 1`。
+- 批量核对“费用”时，先按 `fms_support.cost_gather_strategy.is_gather != 0` + ZCM 允许费用项目过滤出采集科目，普通费用明细和 CB 汇总后只对比下游 `source = 0`。这可以避免利息、社保、税金等凭证类科目混入费用核对，造成范围型假差异。
+- 如果用户要求包含凭证类科目，必须先抽样确认方向：`dp_dws.doris_dws_voucher_subject_mid.result_amount` 与下游 `source = 1` 的 `share/result_amount` 是同向还是反向，再与 FMS 凭证借贷方向统一；不要直接套用费用方向。
 - 如果部门范围内存在差异，但下游全部门合计与中游一致，要检查店铺组织历史。费用行按 `shop_code` 和业务日期关联 `dp_dim.doris_dim_shop`，再按下游 `department_id` + `shop_code` 拆分比较；店铺转部门可能导致部分下游金额留在原部门。
 - 至少按以下口径展示差异：
   - FMS 合计 vs 中游合计
@@ -87,6 +91,7 @@ python3 /Users/liuqingchen/.skills/t1-subject-cost-reconciliation/scripts/reconc
 ## 已知差异模式
 
 - `2026-04` 电商一部 `1122.01.01 应收账款_国内销售_线上直销`：FMS 与中游一致，但下游部门范围内少约 `1,909,417.28`。根因是 `CI168 销售回款` 涉及 `2026-04-01` 转入电商一部的店铺；下游仍有部分金额留在原部门，主要是电商九部，少量在品牌四部。下游全部门合计与中游一致，因此问题是部门归属漂移。
+- `2026-06` 部门+科目 T+1 费用：按费用采集策略过滤到采集/费用科目并只对比下游 `source = 0` 后，FMS、中游、下游成功+失败三方一致。若把所有凭证类科目也纳入，会出现利息、社保、税金等范围型/方向型假差异；需要用户明确要求全科目时再单独处理。
 
 ## 参考资料
 
