@@ -1,0 +1,14 @@
+version = 1
+id = "automation-2"
+kind = "cron"
+name = "每日打卡与工时提醒"
+prompt = "查询数据库 hris_ads.attendance_records 中工号 11723 在中国标准时间（Asia/Shanghai）当天的全部打卡记录。按打卡时间升序列出记录；以当天最早打卡到最新打卡的时间跨度统计当日工时（小时和分钟）。如果存在明确的上班/下班或进/出标识，优先按成对记录累计实际工时，并同时说明计算口径；若记录不足两条，明确提示尚无法计算完整工时。每天 08:50 的提醒重点说明是否已打上班卡、首卡时间；每天 19:50 的提醒重点说明末次打卡时间、当日工时，并提醒是否需要补打下班卡。使用简洁中文通知我；查询失败时说明具体原因，不得猜测数据。"
+status = "ACTIVE"
+rrule = "RRULE:FREQ=DAILY;BYHOUR=8,19;BYMINUTE=50;BYSECOND=0"
+model = "gpt-5.4"
+reasoning_effort = "low"
+execution_environment = "local"
+target = { type = "project", project_id = "/Users/liuqingchen/Documents/个人" }
+cwds = ["/Users/liuqingchen/Documents/个人"]
+created_at = 1783904858645
+updated_at = 1783904858645
