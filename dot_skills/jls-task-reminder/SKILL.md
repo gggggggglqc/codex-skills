@@ -1,6 +1,6 @@
 ---
 name: jls-task-reminder
-description: 查询和管理 jls-core 家里事任务系统。包括：查询产品组成员的家里事任务状态、设置定时提醒（每日验收截止日任务推送）、按工号/姓名/状态筛选任务、查询个人任务到期时间、查询谁的任务快到期了、@提醒相关成员到钉钉群。当用户提到"家里事"、"任务提醒"、"验收截止日"、"产品组任务"、"jls任务"、"进行中任务查询"、"什么时候到期"、"快到期了"、"任务到期"、"我的任务"时触发。
+description: 查询和管理 jls-core 家里事任务系统。包括：查询产品组成员的家里事任务状态、设置定时提醒（每日结束日期任务推送）、按工号/姓名/状态筛选任务、查询个人任务到期时间、查询谁的任务快到期了、@提醒相关成员到钉钉群。当用户提到"家里事"、"任务提醒"、"验收截止日"、"产品组任务"、"jls任务"、"进行中任务查询"、"什么时候到期"、"快到期了"、"任务到期"、"我的任务"时触发。
 ---
 
 # 家里事定时提醒与任务查询
@@ -48,19 +48,19 @@ WHERE dept_id = '393819645' AND deleted = 0 AND status = 1
 
 ## 核心查询场景
 
-### 场景一：今日验收截止日提醒
+### 场景一：今日结束日期提醒
 
-查询产品组在职成员当日验收截止且进行中的任务：
+查询产品组在职成员当日结束日期且进行中的任务：
 
 ```sql
 SELECT t.executor, he.employee_name, he.dingding_user_id,
-       t.task_content, t.current_status, t.acceptance_deadline
+       t.task_content, t.current_status, t.end_date
 FROM task t
 JOIN hris_ads.hris_employee he ON he.job_number = t.executor
 WHERE he.dept_id = '393819645'
   AND he.deleted = 0
   AND he.status = 1
-  AND DATE(t.acceptance_deadline) = CURDATE()
+  AND DATE(t.end_date) = CURDATE()
   AND t.current_status IN (5, 10)
 ORDER BY t.executor
 ```
@@ -151,7 +151,7 @@ ORDER BY t.acceptance_deadline, t.executor
 按 **工号、姓名、任务名称** 组织输出：
 
 ```
-【家里事提醒】今日验收截止日任务：
+【家里事提醒】今日结束日期任务：
 
 工号：11723  姓名：刘庆晨 @刘庆晨
   - Fms-v6.4财务5月结账优化项需求评审（进行中）
@@ -182,7 +182,7 @@ ORDER BY t.acceptance_deadline, t.executor
 执行 `scripts/query_tasks.py` 支持多种查询模式：
 
 ```bash
-# 今日验收截止日提醒（默认）
+# 今日结束日期提醒（默认）
 python3 scripts/query_tasks.py
 
 # 指定日期查询

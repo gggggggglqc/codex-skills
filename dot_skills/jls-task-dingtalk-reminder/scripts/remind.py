@@ -3,7 +3,7 @@
 家里事任务查询与提醒格式化脚本
 
 用法:
-  python3 remind.py              # 查询今日验收截止日任务
+  python3 remind.py              # 查询今日结束日期任务
   python3 remind.py --date 2026-06-16   # 指定日期查询
   python3 remind.py --dept 393819645    # 指定部门（默认产品组）
 """
@@ -75,7 +75,7 @@ def query_tasks(target_date=None, dept_id=None):
         WHERE he.dept_id = '{dept}'
           AND he.deleted = 0
           AND he.status = 1
-          AND DATE(t.acceptance_deadline) = DATE({date_expr})
+          AND DATE(t.end_date) = DATE({date_expr})
           AND t.current_status IN (5, 10)
         ORDER BY t.executor
     """
@@ -92,7 +92,7 @@ def query_tasks(target_date=None, dept_id=None):
         return {
             "has_tasks": False,
             "date": date_label,
-            "message": f"{date_label}产品组无验收截止日在进行中/逾期进行中的家里事任务",
+            "message": f"{date_label}产品组无结束日期在进行中/逾期进行中的家里事任务",
             "mentions": [],
         }
 
@@ -107,7 +107,7 @@ def query_tasks(target_date=None, dept_id=None):
             mentions.append({"name": name, "dingding_user_id": dingding_uid})
         result_by_person[key].append({"task": task_name, "status": status_name})
 
-    lines = [f"【家里事提醒】{date_label}验收截止日任务：", ""]
+    lines = [f"【家里事提醒】{date_label}结束日期任务：", ""]
     for (exec_id, name, dingding_uid), tasks in result_by_person.items():
         lines.append(f"工号：{exec_id}  姓名：{name} <@{dingding_uid}>")
         for t in tasks:

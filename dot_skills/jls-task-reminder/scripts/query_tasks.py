@@ -3,7 +3,7 @@
 家里事任务查询脚本
 
 用法:
-  python3 query_tasks.py                                        # 今日验收截止日提醒
+  python3 query_tasks.py                                        # 今日结束日期提醒
   python3 query_tasks.py --date 2026-06-15                      # 指定日期查询
   python3 query_tasks.py --mode my-tasks --executor 11723       # 查某人的进行中任务及到期时间
   python3 query_tasks.py --mode expiring --days 7               # 未来N天快到期的任务
@@ -63,7 +63,7 @@ def get_conn():
 
 
 def query_daily_reminder(target_date=None, statuses=None, executor=None):
-    """场景一：今日/指定日期验收截止日提醒"""
+    """场景一：今日/指定日期结束日期提醒"""
     if target_date is None:
         date_expr = "CURDATE()"
         date_label = "今日"
@@ -79,13 +79,13 @@ def query_daily_reminder(target_date=None, statuses=None, executor=None):
 
     sql = f"""
         SELECT t.executor, he.employee_name, he.dingding_user_id,
-               t.task_content, t.current_status, t.acceptance_deadline
+               t.task_content, t.current_status, t.end_date
         FROM task t
         JOIN hris_ads.hris_employee he ON he.job_number = t.executor
         WHERE he.dept_id = '{PRODUCT_DEPT_ID}'
           AND he.deleted = 0
           AND he.status = 1
-          AND DATE(t.acceptance_deadline) = DATE({date_expr})
+          AND DATE(t.end_date) = DATE({date_expr})
           AND t.current_status IN ({status_str})
           {executor_filter}
         ORDER BY t.executor
@@ -104,13 +104,13 @@ def query_daily_reminder(target_date=None, statuses=None, executor=None):
             "mode": "daily_reminder",
             "has_tasks": False,
             "date": date_label,
-            "message": f"{date_label}产品组无验收截止日在{'/'.join(STATUS_MAP.get(s, str(s)) for s in statuses)}的家里事任务",
+            "message": f"{date_label}产品组无结束日期在{'/'.join(STATUS_MAP.get(s, str(s)) for s in statuses)}的家里事任务",
             "mentions": [],
         }
 
     result_by_person = {}
     mentions = []
-    for exec_id, name, dingding_uid, content, status, deadline in rows:
+    for exec_id, name, dingding_uid, content, status, end_date in rows:
         status_name = STATUS_MAP.get(status, str(status))
         task_name = content.split("\n")[0][:50]
         key = (exec_id, name, dingding_uid)
@@ -119,7 +119,7 @@ def query_daily_reminder(target_date=None, statuses=None, executor=None):
             mentions.append({"name": name, "dingding_user_id": dingding_uid})
         result_by_person[key].append({"task": task_name, "status": status_name})
 
-    lines = [f"【家里事提醒】{date_label}验收截止日任务：", ""]
+    lines = [f"【家里事提醒】{date_label}结束日期任务：", ""]
     for (exec_id, name, _), tasks in result_by_person.items():
         lines.append(f"工号：{exec_id}  姓名：{name}")
         for t in tasks:
