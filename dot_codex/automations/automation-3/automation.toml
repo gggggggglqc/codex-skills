@@ -1,0 +1,14 @@
+version = 1
+id = "automation-3"
+kind = "cron"
+name = "产品组下班打卡提醒"
+prompt = "每天 19:30（Asia/Shanghai）执行产品组下班打卡提醒。提醒对象为：刘庆晨（11723，钉钉 userId 15365380626118202）、雷奇颖（13463，131029396）、蔡宗敏（13554，181819581433504633）、杨茹（14984，151516944）、朱琳（15281，154190878）、文秋红（26695，190910282525976318）。\n\n查询 Doris 的 hris_ads.attendance_records，按当天 dt、上述工号、deleted=0 汇总打卡条数。数据库连接从 ~/.config/db-profiles/doris.env 读取，禁止输出或记录凭据。仅筛选当天打卡条数少于 2 的人员：\n- 若无人缺卡，发送“【产品组打卡提醒】下班打卡：均已完成。”，不列姓名、不 @。\n- 若有人缺卡，消息只包含对应 @ 和“请及时完成下班打卡。”，不得展示具体打卡时间或已完成者。\n\n通过带加签的钉钉自定义机器人 Webhook 发送。只从 ~/.config/dingtalk-bots/product-attendance.env 读取 DINGTALK_WEBHOOK_TOKEN 与 DINGTALK_WEBHOOK_SECRET；不得写入文件、提示词输出或日志。使用 Python 标准库，以 timestamp + \"\\n\" + secret 计算 HMAC-SHA256，生成 URL 编码 base64 sign 并附加到 oapi.dingtalk.com/robot/send URL。请求为 text 消息，在 at.atUserIds 中仅传缺卡员工的钉钉 userId。发送后仅汇报缺卡人数和发送是否成功，不泄露凭据或钉钉用户 ID。"
+status = "ACTIVE"
+rrule = "RRULE:FREQ=DAILY;BYHOUR=19;BYMINUTE=30;BYSECOND=0"
+model = "gpt-5.6-sol"
+reasoning_effort = "low"
+execution_environment = "local"
+target = { type = "project", project_id = "local-23a15cc78e65967aa52aa745433fd697" }
+cwds = ["/Users/liuqingchen/Documents/个人"]
+created_at = 1784684464703
+updated_at = 1784684464703
