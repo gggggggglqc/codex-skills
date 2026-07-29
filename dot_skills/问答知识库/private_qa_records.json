@@ -118,5 +118,13 @@
     "question": "JBS-LJT-S02B2A2-KJJ-JWT 这个品新增周转箱，今早核算下，该品周转箱费用未核算上",
     "answer": "已定位：新增周转箱4000-W00623已进BOM及标准成本0.637305元/件；销售SKU物流包装方式turnover_type=5，未进入周转箱(type=1)核算分支，导致操作费报价及产销报价周转箱费为0。按现有参数应为0.810210元/件，需改包装方式后重算操作费并重新生成报价。",
     "quality": "good"
+  },
+  {
+    "id": 16,
+    "timestamp": "2026-07-29 19:12:37",
+    "category": "其他",
+    "question": "GC0114-ECOPURE-GGL-S07-33-KJ-3P-V1.0 这个bom，生成不了标准成本",
+    "answer": "已定位：BOM已审核启用，但子件4000-T00572说明书被错误维护为stock_type=3成品且无下级BOM，触发标准成本代码的不可达校验，整张BOM被跳过，因此produce_standard_cost无记录。同厂91个说明书均为stock_type=4。改为辅料后重跑标准成本。",
+    "quality": "good"
   }
 ]

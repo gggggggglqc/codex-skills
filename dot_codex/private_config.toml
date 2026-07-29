@@ -1,7 +1,7 @@
 notify = ["/Users/liuqingchen/.codex/computer-use/Codex Computer Use.app/Contents/SharedSupport/SkyComputerUseClient.app/Contents/MacOS/SkyComputerUseClient", "turn-ended"]
 service_tier = "default"
-model = "gpt-5.6-sol"
-model_reasoning_effort = "medium"
+model = "gpt-5.6-terra"
+model_reasoning_effort = "xhigh"
 
 [marketplaces.openai-bundled]
 last_updated = "2026-07-25T00:59:30Z"
@@ -149,6 +149,9 @@ trust_level = "trusted"
 trust_level = "trusted"
 
 [projects."/Users/liuqingchen/Documents/投资管理"]
+trust_level = "trusted"
+
+[projects."/Users/liuqingchen/Documents/WMS"]
 trust_level = "trusted"
 
 [shell_environment_policy.set]
