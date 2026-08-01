@@ -126,5 +126,69 @@
     "question": "GC0114-ECOPURE-GGL-S07-33-KJ-3P-V1.0 这个bom，生成不了标准成本",
     "answer": "已定位：BOM已审核启用，但子件4000-T00572说明书被错误维护为stock_type=3成品且无下级BOM，触发标准成本代码的不可达校验，整张BOM被跳过，因此produce_standard_cost无记录。同厂91个说明书均为stock_type=4。改为辅料后重跑标准成本。",
     "quality": "good"
+  },
+  {
+    "id": 17,
+    "timestamp": "2026-08-01 08:31:08",
+    "category": "其他",
+    "question": "计算核算6中数据源的核对技能是哪个（集团核算）",
+    "answer": "正确技能为 sales-voucher-reconciliation：核对 fms_cost.psi_sales 与集团账套 account_set=3、voucher_resource=8 的销售凭证收入。",
+    "quality": "good"
+  },
+  {
+    "id": 18,
+    "timestamp": "2026-08-01 08:32:38",
+    "category": "其他",
+    "question": "核对FMS和IMC的数据的技能是哪个",
+    "answer": "正确技能为 reconcile-skill：用于 FMS 与 IOM 数据核对，覆盖采购入库、其他入库/出库、退货应收、无单退货入库及销售出库六类。",
+    "quality": "good"
+  },
+  {
+    "id": 19,
+    "timestamp": "2026-08-01 08:34:08",
+    "category": "其他",
+    "question": "核对一下7月的FMS与IOM数据",
+    "answer": "未完成：erp-mysql 只读连接认证被服务器拒绝（Access denied for oms_query），无法执行六类核对；需恢复账号授权或网络环境后重跑。",
+    "quality": "failed"
+  },
+  {
+    "id": 20,
+    "timestamp": "2026-08-01 11:53:22",
+    "category": "其他",
+    "question": "核对一下7月的FMS与IOM数据",
+    "answer": "2026年7月六类核对完成：采购入库0差异；其他入库4078组合/26591单据差异；其他出库1661/9620；退货应收41/51；无单退货731/1638；销售出库10/151。结果CSV已输出桌面。",
+    "quality": "good"
+  },
+  {
+    "id": 21,
+    "timestamp": "2026-08-01 13:58:21",
+    "category": "费用差异",
+    "question": "退货应收的差异找下",
+    "answer": "7月退货应收差异为51明细行/49张单/55件，FMS有而IOM核对为0；49张IOM单均存在但状态30、arrive_time为1970默认值，未进入状态40/50/60/70核对范围。",
+    "quality": "good"
+  },
+  {
+    "id": 22,
+    "timestamp": "2026-08-01 15:16:43",
+    "category": "其他",
+    "question": "重跑下无单退货入库",
+    "answer": "2026年7月无单退货入库已重跑并覆盖结果：5760个组合、6个差异组合、14条差异明细；相比旧结果731个差异组合/1638条明细明显减少，剩余原因均为FMS与IOM数量不一致。",
+    "quality": "good"
+  },
+  {
+    "id": 23,
+    "timestamp": "2026-08-01 16:32:24",
+    "category": "其他",
+    "question": "再重跑下退货应收，销售出库",
+    "answer": "已重跑2026年7月：退货应收5019组合、41差异组合、51明细；销售出库7065组合、10差异组合、151明细。两类与重跑前结果一致，桌面CSV已覆盖。",
+    "quality": "good"
+  },
+  {
+    "id": 24,
+    "timestamp": "2026-08-01 16:44:29",
+    "category": "费用差异",
+    "question": "销售出库的差异",
+    "answer": "7月销售出库10个差异组合、151件净差（IOM多）。151条均为IOM有FMS无：150条FMS原始销售日志缺失；1条工厂销售记录psi_group_type=409未纳入口径，单号JY2607012072122566231670784。",
+    "quality": "good"
   }
 ]
