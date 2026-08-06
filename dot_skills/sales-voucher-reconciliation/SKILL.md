@@ -1,7 +1,6 @@
 ---
 name: sales-voucher-reconciliation
-description: 核对销售业务日志(fms_cost.psi_sales)与凭证科目发生额(oms_finance.voucher_detail)的差异。当用户提到"收入凭证核对"、"销售凭证核对"、"psi_sales vs voucher"、"收入对凭证"、"账面收入核对"、"凭证收入差异"、"销售与凭证核对"时使用。支持按月/按店铺/按科目维度核对，输出差异金额、差异率、逐日对比。
-version: 1.0.0
+description: 核对销售业务日志(fms_cost.psi_sales)与凭证科目发生额(oms_finance.voucher_detail)的差异。当用户提到"收入凭证核对"、"销售凭证核对"、"psi_sales vs voucher"、"收入对凭证"、"账面收入核对"、"凭证收入差异"、"销售与凭证核对"时使用。支持按月/按店铺/按科目维度核对，默认剔除京东自营平台数据，输出差异金额、差异率、逐日对比。
 ---
 
 # 销售业务日志与凭证科目发生额核对
@@ -13,6 +12,38 @@ version: 1.0.0
 - 数据源：MySQL `fms_cost.psi_sales`
 - 时间字段：`business_date`
 - 公式：`income_fee - refund_amount = net_income`
+- 取数范围：9 个业务分组内，且不属于京东自营平台（`JDZY`）店铺的数据
+
+### 京东自营平台剔除规则（V1.1.0）
+
+京东自营不是本核对口径下的销售收入。**PSI 侧须剔除京东自营平台下的全部数据，不按单一 `psi_group_type`（例如 165）单独处理。**
+
+| 规则项 | 固定值 |
+|---|---|
+| 剔除平台 | 京东自营，平台编码 `JDZY` |
+| 识别链路 | **平台 → 店铺 → `psi_sales.shop_code`** |
+| 适用范围 | PSI 的所有业务分组、月度/逐日/分组汇总 |
+| 凭证侧 | 保持现有 `voucher_resource=8`、`account_set=3` 过滤，**不得追加 JDZY 店铺过滤** |
+
+1. 先从 OMS 店铺主数据查询平台对应的店铺编码；使用历史全量映射，**不要按 `shop.enabled` 过滤**，避免当前已禁用店铺的历史数据被误纳入。
+
+   ```sql
+   SELECT DISTINCT shop_code
+   FROM oms_business.shop
+   WHERE plat_code = 'JDZY'
+     AND shop_code IS NOT NULL
+     AND shop_code <> '';
+   ```
+
+2. 再按店铺编码过滤 PSI。`psi_sales.plat_code` 可能为空，**不得直接用该字段识别京东自营**；保留 `shop_code IS NULL` 的数据并单列核查，避免 `NOT IN` 将空值静默排除。
+
+   ```sql
+   AND (shop_code IS NULL OR shop_code NOT IN (<JDZY 店铺编码列表>))
+   ```
+
+3. 上述条件必须同时应用于 PSI 的月度汇总、逐日汇总和按业务分组汇总。脚本默认执行该规则，并在结果中返回 `psi_excluded_platforms` 和 `psi_excluded_shop_codes` 供审计。
+
+4. 凭证侧继续使用 `voucher_resource = 8`、`account_set = 3` 的既有条件；**JDZY 店铺清单只过滤 PSI，不得用于过滤凭证侧**。新增其他平台排除规则前，须先验证其凭证生成范围；本规则只定义京东自营 `JDZY` 的 PSI 收入口径。
 
 ### 右侧：凭证科目发生额（voucher_detail）
 
@@ -49,7 +80,7 @@ version: 1.0.0
 
 使用 `~/.config/db-profiles/` 下的配置文件：
 
-- `erp-mysql.env` — ERP MySQL，psi_sales 查 `fms_cost` 库，voucher 查 `fms_bill` 库
+- `erp-mysql.env` — ERP MySQL，psi_sales 查 `fms_cost` 库，voucher 查 `fms_bill` 库，京东自营店铺映射查 `oms_business.shop`
 
 ## 脚本位置
 
@@ -85,6 +116,8 @@ python /Users/liuqingchen/.qoderwork/skills/sales-voucher-reconciliation/scripts
 | psi_sales_refund | 业务日志退款合计 |
 | psi_net_income | 业务日志净收入 |
 | psi_cnt | 业务日志记录数 |
+| psi_excluded_platforms | PSI 侧剔除的平台编码（默认 `JDZY`） |
+| psi_excluded_shop_codes | 由 OMS 店铺主数据查询得到的剔除店铺编码 |
 | voucher_income_credit | 凭证收入贷方（6001%） |
 | voucher_income_debit | 凭证收入借方 |
 | voucher_tax_credit | 凭证销项税贷方（2221.01.01%） |
@@ -112,17 +145,19 @@ python /Users/liuqingchen/.qoderwork/skills/sales-voucher-reconciliation/scripts
 
 ## 排查差异时的固定顺序
 
-1. 确认凭证是否已生成（某些日期 voucher_cnt = 0 说明尚未生成凭证）
-2. 检查凭证生成时点（通常按周批量生成，非每日）
-3. 对比科目明细，确认 6001 和 2221.01.01 是否完整
-4. 检查是否存在其他收入相关科目（如 6001.01.04 等子科目）
-5. 按店铺维度单独核对，定位差异来源店铺
-6. 检查 psi_group_type 是否遗漏某个分组
-7. 确认 voucher_resource=8 和 account_set=3 的过滤是否正确
+1. 查询 `oms_business.shop` 中 `plat_code='JDZY'` 的全量店铺编码，并确认输出已记录该清单
+2. 确认凭证是否已生成（某些日期 voucher_cnt = 0 说明尚未生成凭证）
+3. 检查凭证生成时点（通常按周批量生成，非每日）
+4. 对比科目明细，确认 6001 和 2221.01.01 是否完整
+5. 检查是否存在其他收入相关科目（如 6001.01.04 等子科目）
+6. 按店铺维度单独核对，定位差异来源店铺
+7. 检查 psi_group_type 是否遗漏某个分组；不得以“剔除 165 分组”代替平台级剔除
+8. 确认 voucher_resource=8 和 account_set=3 的过滤是否正确
 
 ## 回复要求
 
 - 返回月度汇总的差异金额、差异率和状态
+- 明确列出 PSI 剔除的平台编码及店铺编码数量；如 `shop_code` 为空的数据存在，单列提示
 - 如果差异较大，列出差异最大的日期
 - 按科目明细展示主要科目的贷方和借方
 - 如果发现凭证未生成日期，明确标注
@@ -137,7 +172,12 @@ python /Users/liuqingchen/.qoderwork/skills/sales-voucher-reconciliation/scripts
 
 | 版本号 | 版本内容 | 上线状态 | 上线时间 | 维护人 | 备注 |
 |--------|----------|----------|----------|--------|------|
+| V1.1.0 | 新增京东自营平台级 PSI 剔除规则 | 已上线 | 2026-08-04 | Codex | 通过 `oms_business.shop` 的 `JDZY` 店铺映射过滤，适用于全部业务分组 |
 | V1.0.0 | 初始版本，录入核心规则与核对流程 | 已上线 | 2026-07-06 | QoderWork | 按数仓文档管理规范v1.0补充版本管理章节 |
+
+### 【V1.1.0 额外说明】
+
+京东自营剔除基于店铺主数据的 `plat_code='JDZY'` 映射，不以 `psi_sales.plat_code` 或单一业务分组作为识别条件。
 
 ### 版本更新规则
 

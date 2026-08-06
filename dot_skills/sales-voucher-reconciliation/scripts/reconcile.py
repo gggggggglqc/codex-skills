@@ -71,6 +71,10 @@ PSI_GROUP_TYPES = (
 )
 PSI_GROUP_TYPE_IN = ", ".join(str(g) for g in PSI_GROUP_TYPES)
 
+# PSI platform-level exclusions. JDZY (京东自营) is not sales income for this
+# reconciliation, so every PSI record from its mapped shops is excluded.
+EXCLUDED_PSI_PLATFORM_CODES = ("JDZY",)
+
 GROUP_NAMES = {
     101: "差价交易订单",
     105: "补邮费/差价",
@@ -108,7 +112,32 @@ def get_days(month):
 # ---------------------------------------------------------------------------
 # Fetch psi_sales
 # ---------------------------------------------------------------------------
-def fetch_psi_sales(month, shop_code=None):
+def fetch_platform_shop_codes(platform_codes):
+    """Return every OMS shop_code mapped to the excluded platforms.
+
+    Do not filter by shop.enabled: a currently disabled shop can still have
+    historical PSI records that must retain its platform classification.
+    """
+    if not platform_codes:
+        return []
+
+    conn = make_mysql_conn(database="oms_business")
+    placeholders = ", ".join(["%s"] * len(platform_codes))
+    sql = f"""
+    SELECT DISTINCT shop_code
+    FROM shop
+    WHERE plat_code IN ({placeholders})
+      AND shop_code IS NOT NULL
+      AND shop_code <> ''
+    """
+    with conn.cursor() as cur:
+        cur.execute(sql, list(platform_codes))
+        shop_codes = sorted({row["shop_code"] for row in cur.fetchall()})
+    conn.close()
+    return shop_codes
+
+
+def fetch_psi_sales(month, shop_code=None, excluded_shop_codes=None):
     conn = make_mysql_conn(database="fms_cost")
     daily = {}
     by_group = {}
@@ -116,11 +145,16 @@ def fetch_psi_sales(month, shop_code=None):
     total_refund = Decimal(0)
     total_cnt = 0
 
-    shop_filter = ""
+    shop_filters = []
     params_extra = []
     if shop_code:
-        shop_filter = "AND shop_code = %s"
-        params_extra = [shop_code]
+        shop_filters.append("AND shop_code = %s")
+        params_extra.append(shop_code)
+    if excluded_shop_codes:
+        placeholders = ", ".join(["%s"] * len(excluded_shop_codes))
+        shop_filters.append(f"AND (shop_code IS NULL OR shop_code NOT IN ({placeholders}))")
+        params_extra.extend(excluded_shop_codes)
+    shop_filter = "\n          ".join(shop_filters)
 
     for year, mon, day in get_days(month):
         dt = f"{year}-{mon}-{day:02d}"
@@ -307,8 +341,17 @@ def reconcile(month, shop_code=None):
     if shop_code:
         label += f" (shop={shop_code})"
 
-    print(f"Fetching psi_sales for {label}...", file=sys.stderr)
-    psi = fetch_psi_sales(month, shop_code=shop_code)
+    excluded_shop_codes = fetch_platform_shop_codes(EXCLUDED_PSI_PLATFORM_CODES)
+    print(
+        f"Fetching psi_sales for {label}; excluding platforms "
+        f"{', '.join(EXCLUDED_PSI_PLATFORM_CODES)} ({len(excluded_shop_codes)} shops)...",
+        file=sys.stderr,
+    )
+    psi = fetch_psi_sales(
+        month,
+        shop_code=shop_code,
+        excluded_shop_codes=excluded_shop_codes,
+    )
 
     print(f"Fetching voucher (resource={PSI_VOUCHER_RESOURCE}) for {month}...", file=sys.stderr)
     if shop_code:
@@ -326,6 +369,8 @@ def reconcile(month, shop_code=None):
         "shop_code": shop_code,
         "voucher_resource": PSI_VOUCHER_RESOURCE,
         "psi_group_types": list(PSI_GROUP_TYPES),
+        "psi_excluded_platforms": list(EXCLUDED_PSI_PLATFORM_CODES),
+        "psi_excluded_shop_codes": excluded_shop_codes,
         "monthly_summary": {
             "psi_sales_income_fee": psi["total_income_fee"],
             "psi_sales_refund": psi["total_refund"],
