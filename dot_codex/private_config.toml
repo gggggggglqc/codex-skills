@@ -9,7 +9,7 @@ source_type = "local"
 source = "/Users/liuqingchen/.codex/.tmp/bundled-marketplaces/openai-bundled"
 
 [marketplaces.openai-primary-runtime]
-last_updated = "2026-08-06T08:36:52Z"
+last_updated = "2026-08-12T22:31:30Z"
 source_type = "local"
 source = "/Users/liuqingchen/.cache/codex-runtimes/codex-primary-runtime/plugins/openai-primary-runtime"
 
@@ -76,7 +76,7 @@ cwd = "."
 enabled = false
 
 [desktop]
-conversationDetailMode = "STEPS_PROSE"
+conversationDetailMode = "STEPS_COMMANDS"
 sansFontSize = 14
 codeFontSize = 13
 ambient-suggestions-enabled = true
