@@ -32,8 +32,9 @@ bash ~/.codex/skills/github-skills-sync/scripts/sync_skills_to_github.sh --messa
 - Review `chezmoi status` and the chezmoi source `git status` before pushing when changes look unexpected.
 - Do not commit runtime logs, local environment files, caches, credentials, or generated temporary output.
 - Never commit `~/.codex/auth.json`, `~/.qoderwork/.auth`, session history, sqlite databases, logs, caches, generated images, plugin caches, projects, todos, or temporary directories.
-- Codex config sync is intentionally allowlisted: `config.toml`, `AGENTS.md`, `.codex-global-state.json`, `chrome-native-hosts-v2.json`, and `automations/*/automation.toml`.
-- Qoder config sync is intentionally allowlisted: `.qoder.json`, `.config.json`, `mcp-adaptor.config`, `commands/create-command.md`, and `permission-match-for-bash/safe-alias-scripts/safe_rm.sh`.
+- Codex config sync is intentionally allowlisted: `config.toml`, `AGENTS.md`, `chrome-native-hosts-v2.json`, and `automations/*/automation.toml`.
+- Qoder config sync is intentionally allowlisted: `.qoder.json`, `.config.json`, `commands/create-command.md`, and `permission-match-for-bash/safe-alias-scripts/safe_rm.sh`.
+- Treat `.codex-global-state.json`, `private_config.toml`, and `mcp-adaptor.config` as sensitive or dynamic local state: do not sync them, and remove any previously tracked copies from the source repo before committing.
 - Skills are stored together in the chezmoi source repository under `shared_skills/<skill-name>/`. If the same skill exists in both Codex and Qoder, the directory with the newest file modification time wins.
 - Run `scripts/sync_shared_skills.sh --apply-to-endpoints` to mirror `shared_skills` back into both `~/.codex/skills` and `~/.qoderwork/skills`.
 - By default, keep `.system/` excluded because those are bundled system skills, not user-maintained skills.
