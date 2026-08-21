@@ -5,7 +5,7 @@
 | 日切片键 | `dt`、`goods_code`、`warehouse_code`、`owner_code`、`concat_md5` |
 | 库存数量 | `authentic_total_stock`、`authentic_lock_stock`、`defective_total_stock`、`defective_lock_stock`、`all_stock`、`all_lock_stock`、`temporary_stock` |
 | 补充库存 | `strategized_lock_stock`、`Undelivered_stock`、`in_transit_stock` |
-| 月度成本单价 | `brand_quotation`（不含税）、`tax_brand_quotation`（含税） | 
+| 月度成本单价 | `brand_quotation`（不含税）、`tax_brand_quotation`（含税） |
 | 采购价单价 | `no_tax_purchase_price`、`tax_purchase_price` |
 | 支付滚动指标 | `yst_sale_num`、`three_sale_num`、`seven_sale_num`、`fourteen_sale_num`、`month_sale_num`、`monthly_payment_qty`、`last_monthly_payment_qty` |
 | 出库滚动指标 | `yst_delivery_num`、`three_delivery_num`、`seven_delivery_num`、`fourteen_delivery_num`、`month_delivery_num`、`monthly_qty`、`last_monthly_qty` |
