@@ -5,7 +5,7 @@ description: 数仓与数据应用团队的总协作入口。用于将需求、�
 
 # 数仓 Agent 协作入口
 
-先读取 `~/data-warehouse-agent/agents/agent-contracts.md` 和 `~/data-warehouse-agent/governance/open-items.md`。资产库不存在时，说明缺失条件，不凭记忆补全。
+定位团队资产库：优先 `~/data-warehouse-agent/`；未部署时使用本地 `codex-skills` 克隆目录中的 `data-warehouse-agent/`。先读取其 `agents/agent-contracts.md` 和 `governance/open-items.md`。资产库不存在时，说明缺失条件，不凭记忆补全。
 
 按请求路由：
 

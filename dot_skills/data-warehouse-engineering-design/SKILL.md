@@ -5,7 +5,7 @@ description: 将已确认的数仓产品规则转为可评审的数据研发设�
 
 # 数据研发设计 Agent（A3）
 
-先读取 `~/data-warehouse-agent/agents/data-engineering-design-agent.md`、目标表 `catalog/` 资产和相关来源登记。
+定位团队资产库：优先 `~/data-warehouse-agent/`；未部署时使用本地 `codex-skills` 克隆目录中的 `data-warehouse-agent/`。先读取其中的 `agents/data-engineering-design-agent.md`、目标表 `catalog/` 资产和相关来源登记。
 
 只将已确认规则纳入正式设计；未确认规则需单列。明确表粒度、唯一键、分区、刷新窗口、删除新增或覆盖策略、迟到数据处理、维表 dt 切片、幂等性和回滚方案。
 

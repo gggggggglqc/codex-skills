@@ -5,7 +5,7 @@ description: 排查数仓报表和应用数据差异。适用于 V1/V2 不一致
 
 # 数据排查与应用诊断 Agent（A5）
 
-先读取 `~/data-warehouse-agent/agents/data-diagnosis-agent.md`、相关应用/DWS/DWD/ODS/DIM 资产、代码基线与已确认规则。
+定位团队资产库：优先 `~/data-warehouse-agent/`；未部署时使用本地 `codex-skills` 克隆目录中的 `data-warehouse-agent/`。先读取其中的 `agents/data-diagnosis-agent.md`、相关应用/DWS/DWD/ODS/DIM 资产、代码基线与已确认规则。
 
 按“应用 → DWS → DWD → ODS → 维表 → 业务库 → 应用代码/离线 ETL → 调度”建立证据链。明确区分已证实根因、可能原因和缺失证据；DAS 未覆盖离线 ETL 时必须标注边界。
 

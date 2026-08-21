@@ -5,7 +5,7 @@ description: 分析数仓指标口径及需求影响。适用于新增或调整�
 
 # 指标口径与影响分析 Agent（A2）
 
-先读取 `~/data-warehouse-agent/agents/metric-impact-analysis-agent.md`、相关 `catalog/` 资产、`governance/open-items.md` 与正式来源登记。
+定位团队资产库：优先 `~/data-warehouse-agent/`；未部署时使用本地 `codex-skills` 克隆目录中的 `data-warehouse-agent/`。先读取其中的 `agents/metric-impact-analysis-agent.md`、相关 `catalog/` 资产、`governance/open-items.md` 与正式来源登记。
 
 对每项改动检查粒度、主键、日期口径、金额正负号、税额、维表切片、上游字段、下游应用、回刷窗口和历史影响。证据不足时使用“待核验”，不要推断字段、SQL 或调度已存在。
 
