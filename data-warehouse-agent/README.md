@@ -17,3 +17,5 @@
 2. 每次需求形成一份变更单，状态依次为“需求设计 → 开发中 → 已上线”。
 3. 文档版本仅标红本版本变更；删除项先以红色删除线保留，下一版本再移除。
 4. 任何规则、字段或结论都应能回溯到来源、版本和变更单。
+
+团队克隆后从 [TEAM-ACCESS.md](TEAM-ACCESS.md) 开始；当前来源与资产范围见 `sources/register.yaml` 和 `governance/knowledge-base-manifest.md`。

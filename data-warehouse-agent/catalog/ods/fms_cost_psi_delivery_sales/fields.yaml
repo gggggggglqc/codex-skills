@@ -1,0 +1,3 @@
+schema: ods-field.schema.yaml
+table_asset_id: ods.fms_cost_psi_delivery_sales
+fields: []

@@ -1,0 +1,3 @@
+schema: ods-field.schema.yaml
+table_asset_id: ods.das_core_buyer_appraise
+fields: []

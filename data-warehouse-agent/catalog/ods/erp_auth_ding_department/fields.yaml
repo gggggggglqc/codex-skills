@@ -1,0 +1,3 @@
+schema: ods-field.schema.yaml
+table_asset_id: ods.erp_auth_ding_department
+fields: []

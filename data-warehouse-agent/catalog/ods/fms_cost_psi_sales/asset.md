@@ -1,0 +1,33 @@
+---
+asset_id: ods.fms_cost_psi_sales
+layer: ODS
+table_name: doris_ods_fms_cost_psi_sales
+business_name: FMS 成本销售业务日志
+status: 待数仓确认
+owner: { product: 待确认, warehouse: 待确认 }
+refresh: { frequency: 待确认, timezone: Asia/Shanghai }
+grain: 待确认
+fields_file: fields.yaml
+version: { scene: V1.0.0, valid_from: 2026-08-13, valid_to: null, change_summary: 从 DAS 模型与 T1 核对资料首次登记 }
+source_evidence:
+  - { type: das_code, path: "/Users/liuqingchen/工作/代码/das-core/jbs-das-core-model/src/main/java/com/jbs/das/core/model/DorisOdsFmsCostPsiSalesBo.java", locator: "DorisOdsFmsCostPsiSalesBo", observed_at: 2026-08-13 }
+  - { type: product_doc, path: "2026-06_全科目部门T1上中下游核对.csv", locator: "T1 核对场景资料，字段内容待解析", observed_at: 2026-08-13 }
+implementation_mapping:
+  das_references:
+    - path: "/Users/liuqingchen/工作/代码/das-core/jbs-das-core-model/src/main/java/com/jbs/das/core/model/DorisOdsFmsCostPsiSalesBo.java"
+      ref: master@e715a13dc
+  warehouse_references: []
+open_questions:
+  - 请确认表粒度、业务日期、货主/部门/单据维度与分区字段。
+  - 请提供正式 DDL 与字段中文释义。
+---
+
+# FMS 成本销售业务日志
+
+## 已知业务用途
+
+用于 DAS 中与 FMS 销售相关的数据读取，并被现有 T+1 上中下游核对资料覆盖。
+
+## 使用限制
+
+当前仅确认应用侧存在对应 BO，尚未确认 BO 属性与 ODS 物理字段的一一映射。

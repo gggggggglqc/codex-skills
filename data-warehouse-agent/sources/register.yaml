@@ -1,0 +1,374 @@
+sources:
+  - source_id: product.boss-report-t1-md
+    type: product_doc
+    path: "sources/product/老板报表与T+1净利字段逻辑整理.md"
+    description: "老板报表与 T+1 净利字段、公式和来源整理"
+    status: 已接入
+  - source_id: product.expense-allocation-erp-md
+    type: product_doc
+    path: "sources/product/费用分摊表ERP查询页产品文档.md"
+    description: "费用分摊表 ERP 查询页产品说明，保留为可版本追溯的 Markdown 源文件"
+    status: 已接入
+  - source_id: das.core.master
+    type: das_code
+    path: "/Users/liuqingchen/工作/代码/das-core"
+    ref: "master@e715a13dc"
+    description: "DAS 应用实现证据源"
+    status: 已接入
+  - source_id: warehouse.ddl
+    type: warehouse_ddl
+    description: "待数仓开发提供的 ODS/DWD/DWS 建表语句、字段说明和调度信息"
+    status: 待接入
+  - source_id: product.sales-module-v6.5.1
+    type: product_doc
+    path: "https://alidocs.dingtalk.com/i/nodes/lDZEN6or0dp8Z4Z0NaelVaPYQK91xzy3?utm_scene=team_space"
+    locator: "基础指标-商品v6.5.1、修饰词、修饰词-商品专属、维度概念"
+    description: "销售模块当前业务口径；已按最新文件复核 V6.5.1 的局部删除线，跨境销售不纳入本期三张 Index 表资产"
+    status: 已接入
+  - source_id: product.sales-module-v1.0-history
+    type: product_doc
+    path: "/Users/liuqingchen/Downloads/销售模块.xlsx"
+    locator: "基础指标-商品 1.0"
+    description: "销售模块历史口径，仅作版本追溯，不作为当前资产字段定义"
+    status: 已接入
+  - source_id: product.logistics-module
+    type: product_doc
+    path: "https://alidocs.dingtalk.com/i/nodes/gwva2dxOW4Kv2wKmtoK3rLlP8bkz3BRL?utm_scene=team_space"
+    locator: "表基本说明、表字段说明（主单粒度index表）、表字段说明（子单粒度index表）"
+    description: "物流主单、子单 Index 的当前业务口径"
+    status: 已接入
+  - source_id: product.after-sale-module-v6.5.1
+    type: product_doc
+    path: "https://alidocs.dingtalk.com/i/nodes/3Pl7jXNw6dBWxOjxlgZy8vKAGqOzY0D9?utm_scene=team_space"
+    locator: "V6.5.1售后商品、修饰词、修饰词-商品专属、维度概念"
+    description: "售后模块当前业务口径；历史基础指标商品 Sheet 已隐藏"
+    status: 已接入
+  - source_id: product.inventory-module-v6.5.1
+    type: product_doc
+    path: "https://alidocs.dingtalk.com/i/nodes/m0Xw6OYE4D7VLO4rKkd2WRq13rbjgPM5?utm_scene=team_space"
+    locator: "仅可见 Sheet：更新记录、v6.5.1库存指标、v6.5.1入库商品表、v6.5.1出库指标、出入库状态整合表、修饰词、模块说明、维度概念"
+    description: "库存模块当前可见业务口径；隐藏 Sheet 按产品要求忽略"
+    status: 已接入
+  - source_id: product.purchase-module
+    type: product_doc
+    path: "https://alidocs.dingtalk.com/i/nodes/3Pl7jXNw6dBWxlv2NrX5WvKAGqOzY0D9?utm_scene=team_space"
+    locator: "全部可见 Sheet：模块说明、更新记录、采购订单商品表、采购订单表、修饰词、维度"
+    description: "采购模块当前可见业务口径；采购行单量与业务单元删除线内容已排除"
+    status: 已接入
+  - source_id: warehouse.sales-module-ods-ddl-2026-08-13
+    type: warehouse_ddl
+    path: "sources/ddl/2026-08-13-sales-module-ods.sql"
+    description: "销售模块首批 ODS：OMS 原始订单/退单、DMS 分销订单主子单、分销发货子单和分销退货发货主单"
+    status: 已接入
+  - source_id: source.oms-original-order-refund-ddl-2026-08-14
+    type: source_ddl
+    path: "/Users/liuqingchen/.codex/attachments/24069069-a32d-4561-8695-166a77ab755a/pasted-text.txt; /Users/liuqingchen/.codex/attachments/b0968b46-0a3a-4215-8397-05e515785b97/pasted-text.txt"
+    locator: "oms_order.oms_trade, oms_order.oms_order, oms_order.oms_refund, oms_order.oms_sub_refund_order"
+    description: "OMS 原始订单/退单主子单源表 DDL，确认原始售后商品级关联关系"
+    status: 已接入
+  - source_id: source.oms-system-order-refund-ddl-2026-08-14
+    type: source_ddl
+    path: "/Users/liuqingchen/.codex/attachments/2ea90c89-8b54-472a-b22a-a30af37d4a72/pasted-text.txt; /Users/liuqingchen/.codex/attachments/22885e23-b2e4-4528-addb-d061d232fc25/pasted-text.txt"
+    locator: "oms_ops.trade_order, oms_ops.sub_trade_order, oms_ops.refund_order, oms_ops.sub_refund_order"
+    description: "OMS 系统订单/退单主子单源表 DDL，确认售后商品级关联键与补发候选字段"
+    status: 已接入
+  - source_id: source.iom-return-order-ddl-2026-08-14
+    type: source_ddl
+    path: 用户于会话中提供的 erp_iom.return_order、erp_iom.sub_refund_stock_order DDL
+    locator: "erp_iom.return_order, erp_iom.sub_refund_stock_order"
+    description: "退货应收入库主子单源表 DDL，确认系统退单商家收货及商品实收链路"
+    status: 已接入
+  - source_id: warehouse.refund-order-index-ddl-2026-08-14
+    type: warehouse_ddl
+    path: /Users/liuqingchen/.codex/attachments/9dd62cc2-447e-4a46-8cd9-776f64c96d52/pasted-text.txt
+    locator: CREATE TABLE doris_dws_refund_order_index
+    description: "系统退单商品 Index 完整 DDL：UNIQUE KEY(dt, sub_refund_id)、dt 月度动态分区；未声明调度策略"
+    status: 已接入
+  - source_id: warehouse.dms-refund-return-index-ddl-2026-08-14
+    type: warehouse_ddl
+    path: /Users/liuqingchen/.codex/attachments/166ee304-5cca-43c2-b741-6019f74677a4/pasted-text.txt
+    locator: CREATE TABLE doris_dws_dms_refund_return_index
+    description: "DMS 分销退单与退货商品 Index DDL：UNIQUE KEY(dt, sub_refund_id, goods_code)"
+    status: 已接入
+  - source_id: warehouse.dms-after-sale-ods-ddl-2026-08-14
+    type: warehouse_ddl
+    path: 用户于会话中提供的 doris_ods_dms_refund_order、doris_ods_dms_refund_stock_order DDL
+    locator: "doris_ods_dms_refund_order, doris_ods_dms_refund_stock_order"
+    description: "DMS 分销退单主单与退货入库主单 DDL，补充分销售后主单血缘"
+    status: 已接入
+  - source_id: warehouse.inventory-index-ddl-2026-08-14
+    type: warehouse_ddl
+    path: "/Users/liuqingchen/.codex/attachments/ac86ef59-d499-4e90-b45f-dba682553911/pasted-text.txt; /Users/liuqingchen/.codex/attachments/6c9a0c5b-88ce-46db-81e1-6933a5a1e818/pasted-text.txt; /Users/liuqingchen/.codex/attachments/c59831f1-1a68-4783-9e46-f0ae5e1eb616/pasted-text.txt"
+    locator: "doris_dws_inbound_and_outbound_index, doris_dws_inbound_and_outbound_index_mid, doris_dws_mes_delivery_order_index"
+    description: "库存模块三张 DWS 表完整字段与物理属性 DDL"
+    status: 已接入
+  - source_id: warehouse.inventory-dwd-ddl-2026-08-14
+    type: warehouse_ddl
+    path: 用户于会话中提供的 doris_dwd_stock_order_combine 和五张 MES Combine DDL
+    locator: "doris_dwd_stock_order_combine, doris_dwd_mes_produce_sale_return_inbound_combine, doris_dwd_mes_finish_job_stock_order_combine, doris_dwd_mes_produce_sale_outbound_order_combine, doris_dwd_mes_delivery_reject_stock_order_combine, doris_dwd_mes_take_material_stock_order_combine"
+    description: "库存模块核心出入库与 MES 事实表 DDL"
+    status: 已接入
+  - source_id: warehouse.sku-stock-ddl-2026-08-14
+    type: warehouse_ddl
+    path: 用户于会话中提供的 dp_dim.doris_dim_sku_stock DDL
+    locator: dp_dim.doris_dim_sku_stock
+    description: "库存模块 SKU 当前库存来源维表 DDL"
+    status: 已接入
+  - source_id: warehouse.sku-stock-index-ddl-2026-08-14
+    type: warehouse_ddl
+    path: /Users/liuqingchen/.codex/attachments/9e406b9e-90bf-47f0-9882-52509d4ab1ae/pasted-text.txt
+    locator: doris_dws_sku_stock_index
+    description: "库存模块 SKU 按自然日切片 Index DDL：UNIQUE KEY(dt, goods_code, warehouse_code, owner_code)"
+    status: 已接入
+  - source_id: warehouse.factory-material-dim-ddl-2026-08-14
+    type: warehouse_ddl
+    path: 用户于会话中提供的 dp_dim.doris_dim_oms_product_factory_material DDL
+    locator: dp_dim.doris_dim_oms_product_factory_material
+    description: "工厂物料关系维表 DDL，提供工厂+物料到成品商品和存货类别的映射"
+    status: 已接入
+  - source_id: warehouse.srm-delivery-plan-combine-ddl-2026-08-14
+    type: warehouse_ddl
+    path: /Users/liuqingchen/.codex/attachments/d056fdd0-86bb-4aa6-9f32-27967922930a/pasted-text.txt
+    locator: doris_dwd_srm_delivery_plan_combine
+    description: "采购交货计划宽表 DDL，支撑未交收库存与发货在途库存"
+    status: 已接入
+  - source_id: warehouse.purchase-dwd-combine-ddl-2026-08-14
+    type: warehouse_ddl
+    path: "/Users/liuqingchen/.codex/attachments/329fcca9-44f7-4c3e-99aa-bf672369f8dc/pasted-text.txt; 用户于会话中提供的 dp_dwd.doris_dwd_srm_delivery_order_combine DDL"
+    locator: "doris_dwd_srm_purchase_order_combine, doris_dwd_srm_delivery_order_combine"
+    description: "采购订单与采购发货主子单 Combine DDL，确认数量、状态和价格字段契约"
+    status: 已接入
+  - source_id: warehouse.purchase-order-index-ddl-2026-08-14
+    type: warehouse_ddl
+    path: 用户于会话中提供的 dp_dws.doris_dws_srm_purchase_order_index DDL
+    locator: dp_dws.doris_dws_srm_purchase_order_index
+    description: "采购订单商品 Index DDL，确认 settlement_status=20 为发货在途"
+    status: 已接入
+  - source_id: warehouse.purchase-delivery-refund-index-ddl-2026-08-14
+    type: warehouse_ddl
+    path: "用户于会话中提供的 CREATE TABLE doris_dws_srm_delivery_order_index DDL; /Users/liuqingchen/.codex/attachments/236c0874-3859-4fa5-a29c-e81a3f126f02/pasted-text.txt"
+    locator: "doris_dws_srm_delivery_order_index, doris_dws_srm_refund_order_index"
+    description: "采购发货与采购退单 Index DDL，确认发货唯一键及采购退单字段"
+    status: 已接入
+  - source_id: warehouse.purchase-refund-combine-ddl-2026-08-14
+    type: warehouse_ddl
+    path: 用户于会话中提供的 CREATE TABLE doris_dwd_srm_refund_order_combine DDL
+    locator: doris_dwd_srm_refund_order_combine
+    description: "采购退单主子单 Combine DDL，确认 UNIQUE KEY(dt, sub_refund_id) 与退货事实字段"
+    status: 已接入
+  - source_id: warehouse.purchase-price-dim-ddl-2026-08-14
+    type: warehouse_ddl
+    path: /Users/liuqingchen/.codex/attachments/e5a7680f-56e5-443e-b836-17f3df3a5cc8/pasted-text.txt
+    locator: doris_dim_srm_purchase_price
+    description: "采购价格维表 DDL，确认每日全量快照、价格字段、生效区间和时间类型"
+    status: 已接入
+  - source_id: business.purchase-price-ddl-2026-08-14
+    type: business_ddl
+    path: 用户于会话中提供的 srm_billing.purchase_price DDL
+    locator: purchase_price
+    description: "采购价格业务表 DDL，确认 status=0 生效、1 失效为权威枚举"
+    status: 已接入
+  - source_id: business.srm-delivery-plan-ddl-2026-08-14
+    type: business_ddl
+    path: 用户于会话中提供的 srm_ops.delivery_plan DDL
+    locator: srm_ops.delivery_plan
+    description: "采购交货计划业务表 DDL；含在途数量，不含交收状态字段"
+    status: 已接入
+  - source_id: warehouse.produce-factory-dims-ddl-2026-08-17
+    type: warehouse_ddl
+    path: 用户于会话中提供的 CREATE TABLE doris_dim_oms_product_produce_factory_warehouse、doris_dim_oms_product_produce_factory DDL
+    locator: "doris_dim_oms_product_produce_factory_warehouse, doris_dim_oms_product_produce_factory"
+    description: "生产工厂绑定仓库与生产工厂维表 DDL，支撑采购发货收货仓到工厂及工厂属性映射"
+    status: 已接入
+  - source_id: business.oms-strategy-stock-lock-ddl-2026-08-17
+    type: business_ddl
+    path: 用户于会话中提供的 oms_strategy.stock_lock DDL
+    locator: stock_lock
+    description: "库存锁定策略主表 DDL，确认 status=1 启用、2 禁用及逻辑删除标识"
+    status: 已接入
+  - source_id: business.oms-strategy-stock-lock-detail-ddl-2026-08-17
+    type: business_ddl
+    path: 用户于会话中提供的 oms_strategy.stock_lock_detail DDL
+    locator: stock_lock_detail
+    description: "库存锁定策略明细 DDL，确认锁定量、仓库、货主、商品及主明细关联字段"
+    status: 已接入
+  - source_id: business.iom-stock-order-ddl-2026-08-17
+    type: business_ddl
+    path: /Users/liuqingchen/.codex/attachments/9234458b-a3a6-435a-91a6-3acd3f7773b6/pasted-text.txt
+    locator: erp_iom.stock_order
+    description: "通用出入库开单主表 DDL，确认入/出库方向、原因及出入库主单字段"
+    status: 已接入
+  - source_id: application.iom-stock-order-enums-2026-08-17
+    type: application_enum
+    path: 用户于会话中提供的 StockOrderTypeEnum、StockStatusEnum
+    locator: "StockOrderTypeEnum, StockStatusEnum"
+    description: "通用出入库单 order_type、status 与 source 完整枚举"
+    status: 已接入
+  - source_id: business.sms-refund-suborders-ddl-2026-08-17
+    type: business_ddl
+    path: 用户于会话中提供的 sms_ops.sub_outbound_delivery_order、sms_ops.sub_refund_order、sms_ops.sub_refund_stock_order DDL
+    locator: "sms_ops.sub_outbound_delivery_order, sms_ops.sub_refund_order, sms_ops.sub_refund_stock_order"
+    description: "分销正向出库子单、分销退单子单及分销退货入库子单 DDL，补齐售后商品级事实"
+    status: 已接入
+  - source_id: product.app-delivery-v1-offline-doc-2026-08-17
+    type: product_doc
+    path: "https://alidocs.dingtalk.com/i/nodes/od245kZmnOeW42kkYDAEJYbzxL6R0wMQ?utm_scene=team_space"
+    locator: 全文
+    description: "发货口径应用指标表（发货 V1）离线说明，覆盖维度、指标、跨境切换及应用报表"
+    status: 已接入
+  - source_id: warehouse.app-delivery-v1-ddl-2026-08-17
+    type: warehouse_ddl
+    path: "/Users/liuqingchen/.codex/attachments/9cc7f261-75ba-4653-a457-bdacb43503c1/pasted-text.txt; /Users/liuqingchen/.codex/attachments/40280be0-f397-4167-8da4-649a2bfe8468/pasted-text.txt"
+    locator: dp_dws.doris_app_report_delivery_v1
+    description: "发货 V1 应用汇总表完整 DDL，确认应用字段、时间口径、最终聚合公式、UNIQUE KEY 与分桶"
+    status: 已接入
+  - source_id: product.crossborder-system-construction-2026-08-17
+    type: product_doc
+    path: "https://alidocs.dingtalk.com/i/nodes/2Amq4vjg89gjPrgbhdLoB1AoV3kdP0wQ?utm_scene=team_space"
+    locator: "可见 Sheet：更新内容、跨境系统退单index、V6.5.1跨境系统订单、跨境费用明细及相关宽表/维表说明"
+    description: "跨境系统 ODS/DWD/DWS 建设、字段规则、费用与维表说明；隐藏 Sheet 已忽略"
+    status: 已接入
+  - source_id: warehouse.cbs-trade-refund-index-ddl-2026-08-17
+    type: warehouse_ddl
+    path: "/Users/liuqingchen/.codex/attachments/65caa639-638b-4ba8-bb24-75b445b50071/pasted-text.txt; /Users/liuqingchen/.codex/attachments/3a0c3a90-1180-4d19-895c-75f6f6e51220/pasted-text.txt"
+    locator: "doris_dws_cbs_trade_order_index, doris_dws_cbs_refund_order_index"
+    description: "跨境系统订单和退款 Index 完整 DDL；均每日覆盖更新最近 90 日"
+    status: 已接入
+  - source_id: warehouse.eb-trade-order-goods-index-ddl-2026-08-17
+    type: warehouse_ddl
+    path: /Users/liuqingchen/.codex/attachments/33c452cb-7048-4a18-ba88-cc9f596319f9/pasted-text.txt
+    locator: doris_dws_eb_trade_order_goods_index
+    description: "易仓跨境订单商品 Index 完整 DDL；2026-08-18 确认已停止更新，仅保留历史冻结数据"
+    status: 已接入
+  - source_id: warehouse.eb-trade-order-tmp-ddl-2026-08-18
+    type: warehouse_ddl
+    path: /Users/liuqingchen/.codex/attachments/1ae46b47-bdaa-4606-a2e0-4e1bcaf5bac7/pasted-text.txt
+    locator: doris_ods_eb_trade_order_tmp
+    description: "跨境差异表（易仓跨境订单按发货日、店铺、商品、销售模式、国家汇总）的 DDL；上游 ODS → 易仓订单商品 Index → V1"
+    status: 已接入
+  - source_id: warehouse.platform-dim-ddl-2026-08-18
+    type: warehouse_ddl
+    path: 用户于会话中提供的 CREATE TABLE doris_dim_platform DDL
+    locator: dp_dim.doris_dim_platform
+    description: "平台维表 DDL；cbs_platform 为跨境平台标识，支撑发货 V1 平台与国别判定"
+    status: 已接入
+  - source_id: business.exchange-rate-system-ddl-2026-08-18
+    type: business_ddl
+    path: 用户于会话中提供的 CREATE TABLE fms_support.exchange_rate_system DDL
+    locator: fms_support.exchange_rate_system
+    description: "汇率体系表 DDL；提供源/目标币种、直接/间接汇率和生效区间，支撑跨境人民币金额折算"
+    status: 已接入
+  - source_id: warehouse.cbs-area-site-dim-ddl-2026-08-18
+    type: warehouse_ddl
+    path: 用户于会话中提供的 CREATE TABLE doris_dim_oms_product_cbs_area_site DDL
+    locator: dp_dim.doris_dim_oms_product_cbs_area_site
+    description: "跨境区域站点维表 DDL；按 dt + site_code 提供站点、平台、区域和国家属性"
+    status: 已接入
+  - source_id: warehouse.finance-cost-subject-ddl-2026-08-18
+    type: warehouse_ddl
+    path: 用户于会话中提供的 CREATE TABLE dp_dws.doris_dws_finance_cost_sbjct、doris_dws_finance_cost_sbjct_failure DDL
+    locator: "dp_dws.doris_dws_finance_cost_sbjct, dp_dws.doris_dws_finance_cost_sbjct_failure"
+    description: "财务科目费用分摊事实及失败事实 DDL；主表支撑天猫超市收入、税额补充，失败表用于日常核查"
+    status: 已接入
+  - source_id: warehouse.cost-gather-strategy-dim-ddl-2026-08-18
+    type: warehouse_ddl
+    path: 用户于会话中提供的 CREATE TABLE doris_dim_fms_support_cost_gather_strategy DDL
+    locator: dp_dim.doris_dim_fms_support_cost_gather_strategy
+    description: "费用采集策略维表 DDL；按科目和费用项目定义是否采集及收入/成本/发货方量分摊方式"
+    status: 已接入
+  - source_id: application.cost-gather-strategy-enums-2026-08-18
+    type: application_enum
+    path: 用户于会话中提供的 costBelong、isGather、is_accrual_subject 枚举
+    locator: "costBelong, isGather, is_accrual_subject"
+    description: "费用归属损益方向、是否采集及是否计提枚举，补充费用采集策略维表规则"
+    status: 已接入
+  - source_id: product.boss-report-multidim-2026-08-18
+    type: product_doc
+    path: "https://alidocs.dingtalk.com/i/nodes/ydxXB52LJq7P3z7jSAwYZ1mMWqjMp697?utm_scene=team_space"
+    locator: "版本说明及可见 Sheet：DAS v5.8.4.2净利、DASv5.8.6净利优化、DAS v5.8.6老板报表指标、DAS v5.8.6人力成本占比、额外说明"
+    description: "多维报表－老板报表字段、净利规则、库存/人力指标与筛选说明；隐藏 Sheet 按规则忽略"
+    status: 已接入
+  - source_id: product.t1-net-profit-accounting-2026-08-18
+    type: product_doc
+    path: "https://alidocs.dingtalk.com/i/nodes/Qnp9zOoBVBZDxvZqcpNdvxrPV1DK0g6l?utm_scene=team_space"
+    locator: "可见 Sheet：T+1利润版本规划、V6.4.9.3净利指标表、费用名称字典表V6.4.9.3、收入成本V6.4.9.3、科目费用分摊表V6.4.9.3/V6.4.9.5、分摊失败表"
+    description: "T+1 净利 V2、科目费用分摊、净利指标中间表与跨境/上传费用规则；隐藏 Sheet 按规则忽略"
+    status: 已接入
+  - source_id: product.subject-cost-allocation
+    type: product_doc_section
+    path: "https://alidocs.dingtalk.com/i/nodes/Qnp9zOoBVBZDxvZqcpNdvxrPV1DK0g6l?utm_scene=team_space"
+    locator: "Sheet：科目费用分摊表V6.4.9.3、科目费用分摊表V6.4.9.5"
+    description: "T+1净利核算表中的科目费用分摊规则，作为费用到净利的正式产品来源"
+    status: 已接入
+  - source_id: product.company-assessment-formula
+    type: product_doc_section
+    path: "https://alidocs.dingtalk.com/i/nodes/Qnp9zOoBVBZDxvZqcpNdvxrPV1DK0g6l?utm_scene=team_space&iframeQuery=sheet_range%3Dst-2958ee91-2152_0_0_1_8"
+    locator: "Sheet：V6.4.9.3净利指标表；单元格：B44（考核净利）、D47（考核所得税公式）"
+    description: "T+1净利核算表中的公司考核净利与所得税规则；本地表格未发现名为“公司考核指标公式”的独立 Sheet"
+    status: 已接入
+  - source_id: warehouse.net-profit-core-ddl-2026-08-18
+    type: warehouse_ddl
+    path: 用户于会话中提供的四张 CREATE TABLE DDL
+    locator: "dp_dws.doris_app_net_profit_check_report_v2, dp_dws.doris_dws_voucher_subject_mid, dp_dim.doris_dim_expense_subject_relation, dp_dim.doris_dim_fms_support_subject"
+    description: "T+1 净利 V2、凭证科目中间表、费用科目关系表和财务科目维表 DDL"
+    status: 已接入
+  - source_id: warehouse.abroad-production-revenue-profit-ddl-2026-08-18
+    type: warehouse_ddl
+    path: 用户于会话中提供的 CREATE TABLE abroad_production_revenue_profit DDL
+    locator: abroad_production_revenue_profit
+    description: "跨境收入销量本月拆分表 DDL；含发货日期、店铺、货主、商品、字段编码、平台链接及收入/成本/销量"
+    status: 已接入
+  - source_id: business.abroad-production-revenue-profit-import-flow-2026-08-18
+    type: business_confirmation
+    path: 用户于会话中确认
+    locator: "abroad_production_revenue_profit_import → tmp_data.abroad_production_revenue_profit"
+    description: "业务先导入跨境收入销量原始表，系统按本月拆分至净利 V2 使用的当月数据表"
+    status: 已接入
+  - source_id: warehouse.abroad-production-revenue-profit-import-ddl-2026-08-18
+    type: warehouse_ddl
+    path: 用户于会话中提供的 CREATE TABLE abroad_production_revenue_profit_import DDL
+    locator: abroad_production_revenue_profit_import
+    description: "跨境收入销量业务导入原始表 DDL；与本月拆分表同粒度、同唯一键"
+    status: 已接入
+  - source_id: warehouse.finance-profit-business-ddl-2026-08-18
+    type: warehouse_ddl
+    path: 用户于会话中提供的 CREATE TABLE doris_app_finance_profit_business DDL
+    locator: dp_dws.doris_app_finance_profit_business
+    description: "净利指标中间表 DDL；输出不含税金额、税额及经营/商品/科目/国别维度"
+    status: 已接入
+  - source_id: warehouse.other-expense-data-ddl-2026-08-18
+    type: warehouse_ddl
+    path: 用户于会话中提供的 CREATE TABLE other_expense_data DDL
+    locator: other_expense_data
+    description: "净利核算其他费用月度上传表 DDL；按月、货主、店铺、仓库和费用类型唯一"
+    status: 已接入
+  - source_id: business.finance-expense-voucher-ddl-2026-08-18
+    type: business_ddl
+    path: 用户于会话中提供的 expense_detail、expense_detail_cb、voucher、voucher_detail、voucher_detail_accounting_dimension DDL
+    locator: "fms_cost.expense_detail, fms_cost.expense_detail_cb, fms_bill.voucher, fms_bill.voucher_detail, fms_bill.voucher_detail_accounting_dimension"
+    description: "国内/跨境费用账单与凭证主明细、核算维度原始表 DDL；确认凭证两级关联键及上传费用落表"
+    status: 已接入
+  - source_id: business.ers-expense-order-ddl-2026-08-19
+    type: business_ddl
+    path: 用户于会话中提供的 CREATE TABLE ers_expense.expense_order DDL
+    locator: ers_expense.expense_order
+    description: "费控报销、借款、还款和预付单据主表 DDL；提供审批、成本中心、不含税金额与抵扣税额"
+    status: 已接入
+  - source_id: code.fms-accounting-dimension-semantic-2026-08-19
+    type: fms_code
+    path: /Users/liuqingchen/工作/代码/fms-bill/jbs-fms-bill-service/src/main/java/com/jbs/fms/bill/service/support/AccountingDimensionSupport.java
+    locator: "SHOP、OWNER、WAREHOUSE、DEPARTMENT、SUPPLIER、DISTRIBUTOR 等 AccountingDimensionTypeEnum 使用处"
+    description: "FMS 核算维度枚举的业务编码语义映射；枚举整数值完整定义未在本地工作区找到"
+    status: 已接入
+  - source_id: business.ers-expense-order-cost-detail-ddl-2026-08-19
+    type: business_ddl
+    path: 用户于会话中提供的 CREATE TABLE ers_expense.expense_order_cost_detail DDL
+    locator: ers_expense.expense_order_cost_detail
+    description: "费控费用明细表 DDL；按 order_id 关联主表，提供费用项目、不含税金额、抵扣税额和成本中心"
+    status: 已接入
+  - source_id: code.das-core-v5.8.6-8448e45a5-2026-08-19
+    type: das_code
+    path: /Users/liuqingchen/工作/代码/das-core
+    locator: "das-feature-v5.8.6@8448e45a5ba222326433eda9c28ca273abb8fdb9；master@540e3af8f6a4b3a9a157f03c607e210ec956106c 已同步"
+    description: "DAS 当前待上线 v5.8.6 代码基线；用于核对应用接口、查询 SQL、Doris 上传与同步实现"
+    status: 已接入

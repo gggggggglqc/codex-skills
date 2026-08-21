@@ -1,0 +1,14 @@
+rule_id: check.example
+name: 待确认
+status: 草稿
+scope:
+  assets: []
+  date_range: 待确认
+logic: 待确认
+threshold: 待确认
+severity: P2
+evidence: []
+owner:
+  product: 待确认
+  warehouse: 待确认
+version: V1.0.0
