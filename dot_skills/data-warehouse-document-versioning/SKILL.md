@@ -20,3 +20,7 @@ description: 管理数仓产品文档、来源登记和版本差异。适用于�
 产品需求与变更清单使用 `governance/product-changes/CHG-YYYYMMDD-NNN-*.md`，验收记录使用 `governance/reconciliation/ACC-YYYYMMDD-NNN-*.md`；两者均需关联目标版本、来源链接和彼此编号。已有 `templates/data-product-change.md`、`templates/version-change-log.md`、`templates/reconciliation-report.md` 优先复用。
 
 只有需求评审完成后可由“需求设计”转为“开发中”；只有产品确认上线且验收记录结论明确后可标为“已上线”。未经明确授权，不修改钉钉原文或覆盖已上线历史版本。
+
+正式 `CHG`、`ACC`、版本快照或资产更新写入 Git 前，必须先取得**产品审核确认**；审核前只输出待审核草案，不写入资产库。
+
+当 DAS 版本正式上线后，验收前必须获取对应发布分支或标签的最新 DAS 代码，并登记仓库、分支/标签、commit、拉取时间与获取状态。以文档、代码、结果数据三方核对；若代码不可得，验收记录必须标明“代码证据不可得”，仅能给出结果数据结论，不得断言实现符合或不符合需求。
