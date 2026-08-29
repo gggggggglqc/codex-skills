@@ -110,6 +110,14 @@ remove_tracked_sensitive_files() {
       rm -f "$path"
     fi
   done
+
+  while IFS= read -r path; do
+    if git ls-files --error-unmatch "$path" >/dev/null 2>&1; then
+      git rm -f --quiet "$path"
+    else
+      rm -f "$path"
+    fi
+  done < <(find dot_skills -type f \( -name 'private_*.json' -o -name '*.private.json' \) -print 2>/dev/null)
 }
 
 add_if_exists "$CODEX_HOME_DIR/config.toml"
