@@ -58,8 +58,16 @@ def parse_args() -> argparse.Namespace:
         help="Path to .env file",
     )
     parser.add_argument("--database", default=None, help="Optional database override")
-    parser.add_argument("--finish-table", default="finish_job_stock_order")
-    parser.add_argument("--report-table", default="report_work_order")
+    parser.add_argument("--finish-table", default="erp_iom.finish_job_stock_order_detail")
+    parser.add_argument("--finish-header-table", default="erp_iom.finish_job_stock_order")
+    parser.add_argument("--report-table", default="mes_aps.report_work_order")
+    parser.add_argument("--report-detail-table", default="mes_aps.report_work_order_detail")
+    parser.add_argument(
+        "--finish-time-field",
+        default="billing_time",
+        choices=["create_time", "finish_time", "billing_time"],
+        help="Finish header time field used for month filtering (aligned with rule 2/3).",
+    )
     parser.add_argument("--finish-date-column", default=None)
     parser.add_argument("--report-date-column", default=None)
     parser.add_argument(
@@ -193,22 +201,24 @@ def to_decimal(value) -> Decimal:
     return Decimal(str(value))
 
 
-def run_summary_query(
+def run_finish_summary_query(
     conn,
-    table_name: str,
-    date_column: str,
-    quantity_sql: str,
+    finish_table: str,
+    finish_header_table: str,
+    finish_time_field: str,
     extra_where_sql: str,
     extra_params: Sequence[str],
     start_date: str,
     end_date: str,
 ) -> Dict[str, Decimal]:
     sql = (
-        f"SELECT material_code, {quantity_sql} AS qty "
-        f"FROM {table_name} "
-        f"WHERE {date_column} >= %s AND {date_column} < DATE_ADD(%s, INTERVAL 1 DAY) "
+        "SELECT d.material_code, "
+        "SUM(COALESCE(d.actual_num, 0) + COALESCE(d.defective_actual_num, 0)) AS qty "
+        f"FROM {finish_table} d "
+        f"JOIN {finish_header_table} h ON h.stock_order_id = d.stock_order_id "
+        f"WHERE h.{finish_time_field} >= %s AND h.{finish_time_field} < DATE_ADD(%s, INTERVAL 1 DAY) "
         f"{extra_where_sql} "
-        "GROUP BY material_code"
+        "GROUP BY d.material_code"
     )
     result: Dict[str, Decimal] = {}
     with conn.cursor() as cursor:
@@ -218,9 +228,33 @@ def run_summary_query(
     return result
 
 
+def run_report_summary_query(
+    conn,
+    report_table: str,
+    report_detail_table: str,
+    report_date_column: str,
+    start_date: str,
+    end_date: str,
+) -> Dict[str, Decimal]:
+    sql = (
+        "SELECT r.material_code, SUM(COALESCE(r.report_work_num, 0)) AS qty "
+        f"FROM {report_detail_table} r "
+        f"JOIN {report_table} o ON o.report_work_order_id = r.report_work_order_id "
+        f"WHERE o.{report_date_column} >= %s AND o.{report_date_column} < DATE_ADD(%s, INTERVAL 1 DAY) "
+        "GROUP BY r.material_code"
+    )
+    result: Dict[str, Decimal] = {}
+    with conn.cursor() as cursor:
+        cursor.execute(sql, [start_date, end_date])
+        for row in cursor.fetchall():
+            result[str(row["material_code"])] = to_decimal(row["qty"])
+    return result
+
+
 def run_adjusted_report_summary_query(
     conn,
     report_table: str,
+    report_detail_table: str,
     report_date_column: str,
     finish_table: str,
     finish_product_type: str,
@@ -230,7 +264,8 @@ def run_adjusted_report_summary_query(
     sql = (
         "SELECT r.material_code, "
         "SUM(COALESCE(f.finish_qty, 0)) AS qty "
-        f"FROM {report_table} r "
+        f"FROM {report_detail_table} r "
+        f"JOIN {report_table} o ON o.report_work_order_id = r.report_work_order_id "
         "LEFT JOIN ("
         "  SELECT report_work_order_detail_id, "
         "         SUM(COALESCE(actual_num, 0) + COALESCE(defective_actual_num, 0)) AS finish_qty "
@@ -238,7 +273,7 @@ def run_adjusted_report_summary_query(
         "  WHERE product_type = %s "
         "  GROUP BY report_work_order_detail_id"
         ") f ON f.report_work_order_detail_id = r.detail_id "
-        f"WHERE r.{report_date_column} >= %s AND r.{report_date_column} < DATE_ADD(%s, INTERVAL 1 DAY) "
+        f"WHERE o.{report_date_column} >= %s AND o.{report_date_column} < DATE_ADD(%s, INTERVAL 1 DAY) "
         "GROUP BY r.material_code"
     )
     result: Dict[str, Decimal] = {}
@@ -287,16 +322,18 @@ def main() -> int:
     conn = connect(args.database)
     try:
         finish_table = resolve_table_name(conn, args.finish_table)
+        finish_header_table = resolve_table_name(conn, args.finish_header_table)
         report_table = resolve_table_name(conn, args.report_table)
+        report_detail_table = resolve_table_name(conn, args.report_detail_table)
         finish_columns = fetch_columns(conn, finish_table)
-        report_columns = fetch_columns(conn, report_table)
-        finish_date_column = args.finish_date_column or choose_date_column(finish_columns)
-        report_date_column = args.report_date_column or choose_date_column(report_columns)
+        report_columns = fetch_columns(conn, report_detail_table)
+        finish_date_column = args.finish_date_column or args.finish_time_field
+        report_date_column = args.report_date_column or choose_date_column(fetch_columns(conn, report_table))
 
-        print(f"finish table: {finish_table}")
+        print(f"finish detail table: {finish_table}")
+        print(f"finish header table: {finish_header_table}")
         print(f"report table: {report_table}")
-        print(f"finish columns: {', '.join(finish_columns)}")
-        print(f"report columns: {', '.join(report_columns)}")
+        print(f"report detail table: {report_detail_table}")
         print(f"finish date column: {finish_date_column or 'NOT_FOUND'}")
         print(f"report date column: {report_date_column or 'NOT_FOUND'}")
         print(f"report quantity mode: {args.report_quantity_mode}")
@@ -309,7 +346,7 @@ def main() -> int:
                 print(f"  {name}: {', '.join(related_columns)}")
 
         if not RULE1_REPORT_COLUMNS.issubset(set(report_columns)):
-            report_related = find_related_tables(conn, report_table)
+            report_related = find_related_tables(conn, report_detail_table)
             print("report related tables:")
             for name in report_related:
                 related_columns = fetch_columns(conn, name)
@@ -324,12 +361,12 @@ def main() -> int:
                 "Pass --finish-date-column and --report-date-column."
             )
 
-        finish_map = run_summary_query(
+        finish_map = run_finish_summary_query(
             conn,
             finish_table,
+            finish_header_table,
             finish_date_column,
-            "SUM(COALESCE(actual_num, 0) + COALESCE(defective_actual_num, 0))",
-            "AND product_type = %s",
+            "AND d.product_type = %s",
             [args.finish_product_type],
             args.start_date,
             args.end_date,
@@ -339,6 +376,7 @@ def main() -> int:
             report_map = run_adjusted_report_summary_query(
                 conn,
                 report_table,
+                report_detail_table,
                 report_date_column,
                 finish_table,
                 args.finish_product_type,
@@ -346,13 +384,11 @@ def main() -> int:
                 args.end_date,
             )
         else:
-            report_map = run_summary_query(
+            report_map = run_report_summary_query(
                 conn,
                 report_table,
+                report_detail_table,
                 report_date_column,
-                "SUM(COALESCE(report_work_num, 0))",
-                "",
-                [],
                 args.start_date,
                 args.end_date,
             )
