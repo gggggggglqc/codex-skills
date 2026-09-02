@@ -62,7 +62,7 @@ FACTORY_PSI_GROUP_TYPES: List[str] = [
     "412",
     "413",
 ]
-WHITELIST_WAREHOUSES = {"WH0882", "WH0388", "WH0390", "WH0237", "WH0494"}
+WHITELIST_WAREHOUSES = {"WH0882", "WH0388", "WH0390", "WH0237", "WH0494", "WH0979"}
 
 
 def parse_datetime(value: str) -> str:
@@ -168,7 +168,7 @@ def fetch_left_summary(conn, start_time: str, end_time: str, day_batch_size: int
         "LEFT JOIN oms_business.structure st ON sh.structure_id = st.id "
         "WHERE ps.business_date BETWEEN %s AND %s "
         f"AND ps.psi_group_type IN ({placeholders}) "
-        "AND (w.warehouse_use_type IS NULL OR w.warehouse_use_type <> 2 OR ps.out_warehouse_code IN ('WH0882','WH0388','WH0390','WH0237','WH0494')) "
+        "AND (w.warehouse_use_type IS NULL OR w.warehouse_use_type <> 2 OR ps.out_warehouse_code IN ('WH0882','WH0388','WH0390','WH0237','WH0494','WH0979')) "
         f"{PSI_SALES_EXCLUDE_FACTORY_BUSINESS_SQL}"
         "GROUP BY COALESCE(ps.out_warehouse_code, ''), ps.goods_code"
     )
@@ -182,7 +182,7 @@ def fetch_left_summary(conn, start_time: str, end_time: str, day_batch_size: int
         "WHERE ps.business_date BETWEEN %s AND %s "
         "AND ps.psi_data_from_type = 1 "
         f"AND ps.psi_group_type IN ({factory_placeholders}) "
-        "AND (w.warehouse_use_type IS NULL OR w.warehouse_use_type <> 2 OR ps.out_warehouse_code IN ('WH0882','WH0388','WH0390','WH0237','WH0494')) "
+        "AND (w.warehouse_use_type IS NULL OR w.warehouse_use_type <> 2 OR ps.out_warehouse_code IN ('WH0882','WH0388','WH0390','WH0237','WH0494','WH0979')) "
         "GROUP BY COALESCE(ps.out_warehouse_code, ''), ps.goods_code"
     )
     result: Dict[SUMMARY_KEY, Decimal] = {}
@@ -214,7 +214,7 @@ def fetch_right_summary(
         "LEFT JOIN oms_product.warehouse w ON d.warehouse_code = w.warehouse_code "
         "WHERE d.warehouse_delivery_time BETWEEN %s AND %s "
         "AND d.order_status = 7 "
-        "AND (w.warehouse_use_type IS NULL OR w.warehouse_use_type <> 2 OR d.warehouse_code IN ('WH0882','WH0388','WH0390','WH0237','WH0494')) "
+        "AND (w.warehouse_use_type IS NULL OR w.warehouse_use_type <> 2 OR d.warehouse_code IN ('WH0882','WH0388','WH0390','WH0237','WH0494','WH0979')) "
     )
     result: Dict[SUMMARY_KEY, Decimal] = {}
     with conn.cursor() as cursor:
@@ -282,7 +282,7 @@ def fetch_left_detail(
         "LEFT JOIN oms_business.structure st ON sh.structure_id = st.id "
         "WHERE ps.business_date BETWEEN %s AND %s "
         f"AND ps.psi_group_type IN ({placeholders}) "
-        "AND (w.warehouse_use_type IS NULL OR w.warehouse_use_type <> 2 OR ps.out_warehouse_code IN ('WH0882','WH0388','WH0390','WH0237','WH0494')) "
+        "AND (w.warehouse_use_type IS NULL OR w.warehouse_use_type <> 2 OR ps.out_warehouse_code IN ('WH0882','WH0388','WH0390','WH0237','WH0494','WH0979')) "
         f"{PSI_SALES_EXCLUDE_FACTORY_BUSINESS_SQL}"
     )
     base_sql_factory = (
@@ -295,7 +295,7 @@ def fetch_left_detail(
         "WHERE ps.business_date BETWEEN %s AND %s "
         "AND ps.psi_data_from_type = 1 "
         f"AND ps.psi_group_type IN ({factory_placeholders}) "
-        "AND (w.warehouse_use_type IS NULL OR w.warehouse_use_type <> 2 OR ps.out_warehouse_code IN ('WH0882','WH0388','WH0390','WH0237','WH0494')) "
+        "AND (w.warehouse_use_type IS NULL OR w.warehouse_use_type <> 2 OR ps.out_warehouse_code IN ('WH0882','WH0388','WH0390','WH0237','WH0494','WH0979')) "
     )
     result: Dict[DETAIL_KEY, Decimal] = {}
     with conn.cursor() as cursor:
@@ -332,7 +332,7 @@ def fetch_right_detail(
         "LEFT JOIN oms_product.warehouse w ON d.warehouse_code = w.warehouse_code "
         "WHERE d.warehouse_delivery_time BETWEEN %s AND %s "
         "AND d.order_status = 7 "
-        "AND (w.warehouse_use_type IS NULL OR w.warehouse_use_type <> 2 OR d.warehouse_code IN ('WH0882','WH0388','WH0390','WH0237','WH0494')) "
+        "AND (w.warehouse_use_type IS NULL OR w.warehouse_use_type <> 2 OR d.warehouse_code IN ('WH0882','WH0388','WH0390','WH0237','WH0494','WH0979')) "
     )
     result: Dict[DETAIL_KEY, Decimal] = {}
     with conn.cursor() as cursor:

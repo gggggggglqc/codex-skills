@@ -160,7 +160,7 @@ def fetch_iom_summary(
         "  OR (o.in_out_type = '1' AND o.order_type = '1' AND o.reason IN ('2','6','9')) "
         "  OR (o.in_out_type = '2' AND o.order_type = '1' AND o.reason = '13') "
         "  OR (o.in_out_type = '2' AND o.order_type = '6')) "
-        "AND (w.warehouse_use_type IS NULL OR w.warehouse_use_type <> 2 OR o.warehouse_code IN ('WH0882','WH0388','WH0390','WH0237','WH0494')) "
+        "AND (w.warehouse_use_type IS NULL OR w.warehouse_use_type <> 2 OR o.warehouse_code IN ('WH0882','WH0388','WH0390','WH0237','WH0494','WH0979')) "
     )
 
     result: Dict[SUMMARY_KEY, Decimal] = {}
@@ -284,7 +284,7 @@ def fetch_iom_detail(
         "  OR (o.in_out_type = '1' AND o.order_type = '1' AND o.reason IN ('2','6','9')) "
         "  OR (o.in_out_type = '2' AND o.order_type = '1' AND o.reason = '13') "
         "  OR (o.in_out_type = '2' AND o.order_type = '6')) "
-        "AND (w.warehouse_use_type IS NULL OR w.warehouse_use_type <> 2 OR o.warehouse_code IN ('WH0882','WH0388','WH0390','WH0237','WH0494')) "
+        "AND (w.warehouse_use_type IS NULL OR w.warehouse_use_type <> 2 OR o.warehouse_code IN ('WH0882','WH0388','WH0390','WH0237','WH0494','WH0979')) "
     )
 
     result: Dict[DETAIL_KEY, Decimal] = {}
@@ -360,7 +360,7 @@ def describe_purchase_failure(
 
         if billing_time and not (start_time <= billing_time <= end_time):
             reasons.append(f"billing_time={billing_time} 未命中当前时间范围")
-        if warehouse_use_type == "2" and warehouse_code not in {"WH0882", "WH0388", "WH0390", "WH0237", "WH0494"}:
+        if warehouse_use_type == "2" and warehouse_code not in {"WH0882", "WH0388", "WH0390", "WH0237", "WH0494", "WH0979"}:
             reasons.append(f"warehouse_code={warehouse_code} 命中代发仓过滤")
 
         matched_type = (

@@ -175,7 +175,7 @@ def fetch_right_summary(conn, start_time: str, end_time: str, pairs: Sequence[Tu
         "AND bb.billing_time BETWEEN %s AND %s "
         "AND bb.in_out_type = '1' "
         "AND (cc.allot_type IS NULL OR cc.allot_type <> 1) "
-        "AND (w.warehouse_use_type IS NULL OR w.warehouse_use_type <> 2 OR bb.warehouse_code IN ('WH0882','WH0388','WH0390','WH0237','WH0494')) "
+        "AND (w.warehouse_use_type IS NULL OR w.warehouse_use_type <> 2 OR bb.warehouse_code IN ('WH0882','WH0388','WH0390','WH0237','WH0494','WH0979')) "
         "AND NOT (bb.order_type = '1' AND bb.reason IN ('2','6','9')) "
     ).format(order_types=order_placeholders)
 
@@ -281,7 +281,7 @@ def fetch_right_detail(conn, start_time: str, end_time: str, pairs: Sequence[Tup
         "AND bb.billing_time BETWEEN %s AND %s "
         "AND bb.in_out_type = '1' "
         "AND (cc.allot_type IS NULL OR cc.allot_type <> 1) "
-        "AND (w.warehouse_use_type IS NULL OR w.warehouse_use_type <> 2 OR bb.warehouse_code IN ('WH0882','WH0388','WH0390','WH0237','WH0494')) "
+        "AND (w.warehouse_use_type IS NULL OR w.warehouse_use_type <> 2 OR bb.warehouse_code IN ('WH0882','WH0388','WH0390','WH0237','WH0494','WH0979')) "
         "AND NOT (bb.order_type = '1' AND bb.reason IN ('2','6','9')) "
     ).format(order_types=order_placeholders)
 
@@ -363,7 +363,7 @@ def describe_other_in_failure(
             reasons.append(f"billing_time={billing_time} 未命中当前时间范围")
         if allot_type == "1":
             reasons.append("命中仓内调拨过滤")
-        if warehouse_use_type == "2" and warehouse_code not in {"WH0882", "WH0388", "WH0390", "WH0237", "WH0494"}:
+        if warehouse_use_type == "2" and warehouse_code not in {"WH0882", "WH0388", "WH0390", "WH0237", "WH0494", "WH0979"}:
             reasons.append(f"warehouse_code={warehouse_code} 命中代发仓过滤")
         if order_type == "1" and reason in {"2", "6", "9"}:
             reasons.append(f"order_type={order_type}, reason={reason} 被其他入库排除规则过滤")
