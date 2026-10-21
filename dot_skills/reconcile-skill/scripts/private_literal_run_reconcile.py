@@ -26,6 +26,7 @@ def main() -> None:
     parser.add_argument("--end-time", required=True, help="结束时间，格式 YYYY-MM-DD HH:MM:SS")
     parser.add_argument("--summary-output", help="汇总输出文件")
     parser.add_argument("--detail-output", help="明细输出文件")
+    parser.add_argument("--source-audit-output", help="跨来源重复与冲突明细文件")
     parser.add_argument("--batch-size", type=int, help="分批查询大小")
     parser.add_argument("--day-batch-size", type=int, help="按多少天一批查询")
     args = parser.parse_args()
@@ -45,6 +46,8 @@ def main() -> None:
         cmd.extend(["--summary-output", args.summary_output])
     if args.detail_output:
         cmd.extend(["--detail-output", args.detail_output])
+    if args.source_audit_output:
+        cmd.extend(["--source-audit-output", args.source_audit_output])
     if args.batch_size is not None:
         cmd.extend(["--batch-size", str(args.batch_size)])
     if args.day_batch_size is not None:

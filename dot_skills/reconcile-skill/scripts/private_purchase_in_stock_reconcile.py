@@ -22,6 +22,8 @@ from datetime import datetime
 from decimal import Decimal
 from typing import Dict, Iterable, List, Sequence, Tuple
 
+from fms_source_reconcile import close_fms_dataset, get_fms_dataset, run_reconciliation
+
 try:
     import pymysql
     from pymysql.cursors import DictCursor
@@ -77,6 +79,8 @@ def load_known_dotenvs(script_dir: str) -> None:
     for path in candidate_paths:
         load_dotenv(path)
 
+    load_dotenv(os.path.join(os.path.expanduser("~"), ".config", "db-profiles", "erp-mysql.env"))
+
 
 def to_decimal(value) -> Decimal:
     """统一转 Decimal，避免精度问题"""
@@ -104,37 +108,7 @@ def build_pair_filter(alias_warehouse: str, alias_goods: str, pairs: Sequence[Tu
 
 
 def fetch_fms_summary(conn, start_time: str, end_time: str) -> Dict[SUMMARY_KEY, Decimal]:
-    """汇总查询 FMS 两套采购来源"""
-    sql_legacy = (
-        "SELECT "
-        "COALESCE(r.warehouse_code, '') AS warehouse_code, "
-        "d.goods_code AS goods_code, "
-        "SUM(CASE WHEN r.psi_group_type IN (6, 202) THEN COALESCE(d.refund_num, 0) ELSE d.num END) AS total_num "
-        "FROM fms_cost.psi_purchase_record_detail d "
-        "LEFT JOIN fms_cost.psi_purchase_record r ON d.business_no = r.business_no "
-        "WHERE r.business_date BETWEEN %s AND %s "
-        "GROUP BY COALESCE(r.warehouse_code, ''), d.goods_code"
-    )
-    sql_factory = (
-        "SELECT "
-        "COALESCE(r.warehouse_code, '') AS warehouse_code, "
-        "d.goods_code AS goods_code, "
-        "SUM(CASE WHEN r.psi_group_type IN (6, 602) THEN COALESCE(d.refund_num, 0) ELSE d.num END) AS total_num "
-        "FROM fms_cost.psi_factory_purchase_record_detail d "
-        "LEFT JOIN fms_cost.psi_factory_purchase_record r ON d.business_no = r.business_no "
-        "WHERE r.business_date BETWEEN %s AND %s "
-        "GROUP BY COALESCE(r.warehouse_code, ''), d.goods_code"
-    )
-
-    result: Dict[SUMMARY_KEY, Decimal] = {}
-    with conn.cursor() as cursor:
-        for sql in (sql_legacy, sql_factory):
-            cursor.execute(sql, [start_time, end_time])
-            for row in cursor.fetchall():
-                key = (str(row["warehouse_code"]), str(row["goods_code"]))
-                result[key] = result.get(key, Decimal("0")) + to_decimal(row["total_num"])
-    return result
-
+    return get_fms_dataset(conn, sys.modules[__name__], "purchase", start_time, end_time).summary()
 
 def fetch_iom_summary(
     conn,
@@ -211,54 +185,8 @@ def build_summary_rows(
     return rows, diff_pairs
 
 
-def fetch_fms_detail(
-    conn,
-    start_time: str,
-    end_time: str,
-    pairs: Sequence[Tuple[str, str]],
-    batch_size: int,
-) -> Dict[DETAIL_KEY, Decimal]:
-    """查询 FMS 差异组合下的单据明细"""
-    base_sql_legacy = (
-        "SELECT "
-        "r.business_no AS order_code, "
-        "d.goods_code AS goods_code, "
-        "SUM(CASE WHEN r.psi_group_type IN (6, 202) THEN COALESCE(d.refund_num, 0) ELSE d.num END) AS total_num "
-        "FROM fms_cost.psi_purchase_record_detail d "
-        "LEFT JOIN fms_cost.psi_purchase_record r ON d.business_no = r.business_no "
-        "WHERE r.business_date BETWEEN %s AND %s "
-    )
-    base_sql_factory = (
-        "SELECT "
-        "r.stock_order_code AS order_code, "
-        "d.goods_code AS goods_code, "
-        "SUM(CASE WHEN r.psi_group_type IN (6, 602) THEN COALESCE(d.refund_num, 0) ELSE d.num END) AS total_num "
-        "FROM fms_cost.psi_factory_purchase_record_detail d "
-        "LEFT JOIN fms_cost.psi_factory_purchase_record r ON d.business_no = r.business_no "
-        "WHERE r.business_date BETWEEN %s AND %s "
-    )
-
-    result: Dict[DETAIL_KEY, Decimal] = {}
-    with conn.cursor() as cursor:
-        for batch in chunked(list(pairs), batch_size):
-            pair_filter_legacy, pair_params_legacy = build_pair_filter("COALESCE(r.warehouse_code, '')", "d.goods_code", batch)
-            sql_legacy = base_sql_legacy + f"AND ({pair_filter_legacy}) GROUP BY r.business_no, d.goods_code"
-            params_legacy: List[str] = [start_time, end_time] + pair_params_legacy
-            cursor.execute(sql_legacy, params_legacy)
-            for row in cursor.fetchall():
-                key = (str(row["order_code"]), str(row["goods_code"]))
-                result[key] = result.get(key, Decimal("0")) + to_decimal(row["total_num"])
-
-            pair_filter_factory, pair_params_factory = build_pair_filter("COALESCE(r.warehouse_code, '')", "d.goods_code", batch)
-            sql_factory = base_sql_factory + f"AND ({pair_filter_factory}) GROUP BY r.stock_order_code, d.goods_code"
-            params_factory: List[str] = [start_time, end_time] + pair_params_factory
-            cursor.execute(sql_factory, params_factory)
-            for row in cursor.fetchall():
-                key = (str(row["order_code"]), str(row["goods_code"]))
-                result[key] = result.get(key, Decimal("0")) + to_decimal(row["total_num"])
-
-    return result
-
+def fetch_fms_detail(conn, start_time: str, end_time: str, pairs: Sequence[Tuple[str, str]], batch_size: int) -> Dict[DETAIL_KEY, Decimal]:
+    return get_fms_dataset(conn, sys.modules[__name__], "purchase", start_time, end_time).detail(pairs)
 
 def fetch_iom_detail(
     conn,
@@ -445,6 +373,7 @@ def parse_args() -> argparse.Namespace:
         default=os.path.join(DESKTOP_DIR, "purchase_in_stock_detail.csv"),
         help="单据差异输出文件",
     )
+    parser.add_argument("--source-audit-output", help="跨来源重复与冲突明细文件")
     parser.add_argument("--batch-size", type=int, default=100, help="差异组合分批查询大小")
     return parser.parse_args()
 
@@ -476,38 +405,10 @@ def main() -> None:
 
     conn = pymysql.connect(**conn_kwargs)
     try:
-        left_summary = fetch_fms_summary(conn, args.start_time, args.end_time)
-        right_summary = fetch_iom_summary(conn, args.start_time, args.end_time)
-        summary_rows, diff_pairs = build_summary_rows(left_summary, right_summary)
-
-        detail_rows: List[Dict[str, str]] = []
-        if diff_pairs:
-            left_detail = fetch_fms_detail(conn, args.start_time, args.end_time, diff_pairs, args.batch_size)
-            right_detail = fetch_iom_detail(conn, args.start_time, args.end_time, diff_pairs, args.batch_size)
-            iom_order_meta = fetch_iom_order_meta(conn, sorted({order_code for order_code, _ in set(left_detail.keys()) | set(right_detail.keys())}))
-            detail_rows = build_detail_rows(left_detail, right_detail, iom_order_meta, args.start_time, args.end_time)
+        run_reconciliation(sys.modules[__name__], conn, args, "purchase")
     finally:
+        close_fms_dataset(conn)
         conn.close()
-
-    write_csv(
-        args.summary_output,
-        summary_rows,
-        ["warehouse_code", "goods_code", "fms_num", "iom_num", "diff_num", "message"],
-    )
-    write_csv(
-        args.detail_output,
-        detail_rows,
-        ["order_code", "goods_code", "fms_num", "iom_num", "diff_num", "message", "failure_reason"],
-    )
-
-    print(
-        f"核对完成，时间范围 {args.start_time} 到 {args.end_time}，"
-        f"汇总对比 {len(summary_rows)} 行，"
-        f"汇总差异组合 {len(diff_pairs)} 个，"
-        f"单据差异 {len(detail_rows)} 条"
-    )
-    print(f"汇总文件: {args.summary_output}")
-    print(f"单据差异文件: {args.detail_output}")
 
 
 if __name__ == "__main__":

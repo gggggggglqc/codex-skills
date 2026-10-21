@@ -68,6 +68,9 @@ SUMMARY_PATTERNS = {
     "detail_rows": re.compile(r"单据差异\s+(\d+)\s+条"),
     "summary_output": re.compile(r"汇总文件:\s*(.+)"),
     "detail_output": re.compile(r"单据差异文件:\s*(.+)"),
+    "source_audit_output": re.compile(r"来源处理文件:\s*(.+)"),
+    "duplicate_groups": re.compile(r"跨来源重复\s+(\d+)\s+组"),
+    "source_issues": re.compile(r"来源异常\s+(\d+)\s+组"),
 }
 
 
@@ -167,13 +170,16 @@ def parse_run_output(stdout: str, fallback_summary: str, fallback_detail: str) -
         "detail_rows": None,
         "summary_output": fallback_summary,
         "detail_output": fallback_detail,
+        "source_audit_output": None,
+        "duplicate_groups": None,
+        "source_issues": None,
     }
     for key, pattern in SUMMARY_PATTERNS.items():
         match = pattern.search(stdout)
         if not match:
             continue
         value = match.group(1).strip()
-        if key in {"summary_rows", "diff_pairs", "detail_rows"}:
+        if key in {"summary_rows", "diff_pairs", "detail_rows", "duplicate_groups", "source_issues"}:
             result[key] = int(value)
         else:
             result[key] = value
@@ -238,8 +244,11 @@ def build_reply_text(result: Dict[str, Any]) -> str:
         f"汇总对比：{result['summary_rows']} 行\n"
         f"差异组合：{result['diff_pairs']} 个\n"
         f"单据差异：{result['detail_rows']} 条\n"
+        f"跨来源重复：{result.get('duplicate_groups')} 组\n"
+        f"来源异常：{result.get('source_issues')} 组\n"
         f"汇总文件：{result['summary_output']}\n"
-        f"明细文件：{result['detail_output']}"
+        f"明细文件：{result['detail_output']}\n"
+        f"来源处理文件：{result.get('source_audit_output')}"
     )
 
 

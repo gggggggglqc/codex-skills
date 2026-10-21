@@ -20,6 +20,8 @@ from datetime import datetime, timedelta
 from decimal import Decimal
 from typing import Dict, Iterable, List, Sequence, Tuple
 
+from fms_source_reconcile import close_fms_dataset, get_fms_dataset, run_reconciliation
+
 try:
     import pymysql
     from pymysql.cursors import DictCursor
@@ -104,6 +106,8 @@ def load_known_dotenvs(script_dir: str) -> None:
     for path in candidate_paths:
         load_dotenv(path)
 
+    load_dotenv(os.path.join(os.path.expanduser("~"), ".config", "db-profiles", "erp-mysql.env"))
+
 
 def to_decimal(value) -> Decimal:
     if value is None:
@@ -155,46 +159,7 @@ PSI_SALES_EXCLUDE_FACTORY_BUSINESS_SQL = (
 
 
 def fetch_left_summary(conn, start_time: str, end_time: str, day_batch_size: int) -> Dict[SUMMARY_KEY, Decimal]:
-    placeholders = ", ".join(["%s"] * len(PSI_GROUP_TYPES))
-    factory_placeholders = ", ".join(["%s"] * len(FACTORY_PSI_GROUP_TYPES))
-    sql_common = (
-        "SELECT "
-        "COALESCE(ps.out_warehouse_code, '') AS warehouse_code, "
-        "ps.goods_code AS goods_code, "
-        "SUM(ps.actual_num) AS total_num "
-        "FROM fms_cost.psi_sales ps "
-        "LEFT JOIN oms_product.warehouse w ON ps.out_warehouse_code = w.warehouse_code "
-        "LEFT JOIN oms_business.shop sh ON ps.shop_code = sh.shop_code "
-        "LEFT JOIN oms_business.structure st ON sh.structure_id = st.id "
-        "WHERE ps.business_date BETWEEN %s AND %s "
-        f"AND ps.psi_group_type IN ({placeholders}) "
-        "AND (w.warehouse_use_type IS NULL OR w.warehouse_use_type <> 2 OR ps.out_warehouse_code IN ('WH0882','WH0388','WH0390','WH0237','WH0494','WH0979')) "
-        f"{PSI_SALES_EXCLUDE_FACTORY_BUSINESS_SQL}"
-        "GROUP BY COALESCE(ps.out_warehouse_code, ''), ps.goods_code"
-    )
-    sql_factory = (
-        "SELECT "
-        "COALESCE(ps.out_warehouse_code, '') AS warehouse_code, "
-        "ps.goods_code AS goods_code, "
-        "SUM(ps.actual_num) AS total_num "
-        "FROM fms_cost.psi_factory_sales ps "
-        "LEFT JOIN oms_product.warehouse w ON ps.out_warehouse_code = w.warehouse_code "
-        "WHERE ps.business_date BETWEEN %s AND %s "
-        "AND ps.psi_data_from_type = 1 "
-        f"AND ps.psi_group_type IN ({factory_placeholders}) "
-        "AND (w.warehouse_use_type IS NULL OR w.warehouse_use_type <> 2 OR ps.out_warehouse_code IN ('WH0882','WH0388','WH0390','WH0237','WH0494','WH0979')) "
-        "GROUP BY COALESCE(ps.out_warehouse_code, ''), ps.goods_code"
-    )
-    result: Dict[SUMMARY_KEY, Decimal] = {}
-    with conn.cursor() as cursor:
-        for range_start, range_end in split_datetime_range(start_time, end_time, day_batch_size):
-            for sql, group_types in ((sql_common, PSI_GROUP_TYPES), (sql_factory, FACTORY_PSI_GROUP_TYPES)):
-                cursor.execute(sql, [range_start[:10], range_end[:10]] + group_types)
-                for row in cursor.fetchall():
-                    key = (str(row["warehouse_code"]), str(row["goods_code"]))
-                    result[key] = result.get(key, Decimal("0")) + to_decimal(row["total_num"])
-    return result
-
+    return get_fms_dataset(conn, sys.modules[__name__], "sales_outbound", start_time, end_time, day_batch_size).summary()
 
 def fetch_right_summary(
     conn,
@@ -261,58 +226,8 @@ def build_summary_rows(left_summary: Dict[SUMMARY_KEY, Decimal], right_summary: 
     return rows, diff_pairs
 
 
-def fetch_left_detail(
-    conn,
-    start_time: str,
-    end_time: str,
-    pairs: Sequence[Tuple[str, str]],
-    batch_size: int,
-    day_batch_size: int,
-) -> Dict[DETAIL_KEY, Decimal]:
-    placeholders = ", ".join(["%s"] * len(PSI_GROUP_TYPES))
-    factory_placeholders = ", ".join(["%s"] * len(FACTORY_PSI_GROUP_TYPES))
-    base_sql_common = (
-        "SELECT "
-        "ps.business_code AS business_code, "
-        "ps.goods_code AS goods_code, "
-        "SUM(ps.actual_num) AS total_num "
-        "FROM fms_cost.psi_sales ps "
-        "LEFT JOIN oms_product.warehouse w ON ps.out_warehouse_code = w.warehouse_code "
-        "LEFT JOIN oms_business.shop sh ON ps.shop_code = sh.shop_code "
-        "LEFT JOIN oms_business.structure st ON sh.structure_id = st.id "
-        "WHERE ps.business_date BETWEEN %s AND %s "
-        f"AND ps.psi_group_type IN ({placeholders}) "
-        "AND (w.warehouse_use_type IS NULL OR w.warehouse_use_type <> 2 OR ps.out_warehouse_code IN ('WH0882','WH0388','WH0390','WH0237','WH0494','WH0979')) "
-        f"{PSI_SALES_EXCLUDE_FACTORY_BUSINESS_SQL}"
-    )
-    base_sql_factory = (
-        "SELECT "
-        "ps.business_code AS business_code, "
-        "ps.goods_code AS goods_code, "
-        "SUM(ps.actual_num) AS total_num "
-        "FROM fms_cost.psi_factory_sales ps "
-        "LEFT JOIN oms_product.warehouse w ON ps.out_warehouse_code = w.warehouse_code "
-        "WHERE ps.business_date BETWEEN %s AND %s "
-        "AND ps.psi_data_from_type = 1 "
-        f"AND ps.psi_group_type IN ({factory_placeholders}) "
-        "AND (w.warehouse_use_type IS NULL OR w.warehouse_use_type <> 2 OR ps.out_warehouse_code IN ('WH0882','WH0388','WH0390','WH0237','WH0494','WH0979')) "
-    )
-    result: Dict[DETAIL_KEY, Decimal] = {}
-    with conn.cursor() as cursor:
-        for batch in chunked(list(pairs), batch_size):
-            pair_filter, pair_params = build_pair_filter("COALESCE(ps.out_warehouse_code, '')", "ps.goods_code", batch)
-            for range_start, range_end in split_datetime_range(start_time, end_time, day_batch_size):
-                for base_sql, group_types in (
-                    (base_sql_common, PSI_GROUP_TYPES),
-                    (base_sql_factory, FACTORY_PSI_GROUP_TYPES),
-                ):
-                    sql = base_sql + f"AND ({pair_filter}) GROUP BY ps.business_code, ps.goods_code"
-                    cursor.execute(sql, [range_start[:10], range_end[:10]] + group_types + pair_params)
-                    for row in cursor.fetchall():
-                        key = (str(row["business_code"]), str(row["goods_code"]))
-                        result[key] = result.get(key, Decimal("0")) + to_decimal(row["total_num"])
-    return result
-
+def fetch_left_detail(conn, start_time: str, end_time: str, pairs: Sequence[Tuple[str, str]], batch_size: int, day_batch_size: int) -> Dict[DETAIL_KEY, Decimal]:
+    return get_fms_dataset(conn, sys.modules[__name__], "sales_outbound", start_time, end_time, day_batch_size).detail(pairs)
 
 def fetch_right_detail(
     conn,
@@ -327,8 +242,8 @@ def fetch_right_detail(
         "d.order_id AS business_code, "
         "s.goods_code AS goods_code, "
         "SUM(s.goods_num) AS total_num "
-        "FROM erp_iom.sub_delivery_order s "
-        "LEFT JOIN erp_iom.delivery_order d ON s.delivery_order_id = d.delivery_order_id "
+        "FROM erp_iom.delivery_order d "
+        "STRAIGHT_JOIN erp_iom.sub_delivery_order s ON s.delivery_order_id = d.delivery_order_id "
         "LEFT JOIN oms_product.warehouse w ON d.warehouse_code = w.warehouse_code "
         "WHERE d.warehouse_delivery_time BETWEEN %s AND %s "
         "AND d.order_status = 7 "
@@ -465,6 +380,7 @@ def parse_args() -> argparse.Namespace:
         default=os.path.join(DESKTOP_DIR, "sales_outbound_detail.csv"),
         help="单据差异输出文件",
     )
+    parser.add_argument("--source-audit-output", help="跨来源重复与冲突明细文件")
     parser.add_argument("--batch-size", type=int, default=100, help="差异组合分批查询大小")
     parser.add_argument("--day-batch-size", type=int, default=1, help="按多少天一批查询汇总和明细")
     return parser.parse_args()
@@ -496,30 +412,10 @@ def main() -> None:
 
     conn = pymysql.connect(**conn_kwargs)
     try:
-        left_summary = fetch_left_summary(conn, args.start_time, args.end_time, args.day_batch_size)
-        right_summary = fetch_right_summary(conn, args.start_time, args.end_time, day_batch_size=args.day_batch_size)
-        summary_rows, diff_pairs = build_summary_rows(left_summary, right_summary)
-
-        detail_rows: List[Dict[str, str]] = []
-        if diff_pairs:
-            left_detail = fetch_left_detail(conn, args.start_time, args.end_time, diff_pairs, args.batch_size, args.day_batch_size)
-            right_detail = fetch_right_detail(conn, args.start_time, args.end_time, diff_pairs, args.batch_size, args.day_batch_size)
-            iom_order_meta = fetch_iom_order_meta(conn, sorted({business_code for business_code, _ in set(left_detail.keys()) | set(right_detail.keys())}))
-            detail_rows = build_detail_rows(left_detail, right_detail, iom_order_meta, args.start_time, args.end_time)
+        run_reconciliation(sys.modules[__name__], conn, args, "sales_outbound")
     finally:
+        close_fms_dataset(conn)
         conn.close()
-
-    write_csv(args.summary_output, summary_rows, ["warehouse_code", "goods_code", "fms_num", "iom_num", "diff_num", "message"])
-    write_csv(args.detail_output, detail_rows, ["business_code", "goods_code", "fms_num", "iom_num", "diff_num", "message", "failure_reason"])
-
-    print(
-        f"核对完成，时间范围 {args.start_time} 到 {args.end_time}，"
-        f"汇总对比 {len(summary_rows)} 行，"
-        f"汇总差异组合 {len(diff_pairs)} 个，"
-        f"单据差异 {len(detail_rows)} 条"
-    )
-    print(f"汇总文件: {args.summary_output}")
-    print(f"单据差异文件: {args.detail_output}")
 
 
 if __name__ == "__main__":
