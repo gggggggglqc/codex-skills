@@ -4,10 +4,10 @@
     {
       "schemaVersion": 2,
       "appServerProtocolVersion": 2,
-      "appVersion": "26.1013.40934",
+      "appVersion": "26.1103.60933",
       "channel": "prod",
-      "cliVersion": "26.1013.40934",
-      "entryId": "codex-runtime-46cfe57e4232ad77255541f78fec9c09",
+      "cliVersion": "26.1103.60933",
+      "entryId": "codex-runtime-5213456883366b29308b01629527f26e",
       "extensionBuildChannels": [
         "prod"
       ],
@@ -20,7 +20,7 @@
         "com.openai.codexextension"
       ],
       "nativeHostProtocolVersion": 2,
-      "nativeHostVersion": "26.1013.40934",
+      "nativeHostVersion": "26.1103.60933",
       "paths": {
         "browserClientPath": "/Users/liuqingchen/.codex/plugins/cache/openai-bundled/chrome/latest/scripts/browser-client.mjs",
         "browserServicePath": "/Users/liuqingchen/.codex/plugins/cache/openai-bundled/chrome/latest/scripts/browser-service.mjs",
@@ -35,13 +35,13 @@
         "resourcesPath": "/Applications/ChatGPT.app/Contents/Resources"
       },
       "presence": {
-        "lastSeenAt": "2026-10-20T03:42:37.983Z",
-        "pid": 43537,
-        "startedAt": "2026-10-20T03:42:37.983Z"
+        "lastSeenAt": "2026-11-09T00:58:36.902Z",
+        "pid": 37655,
+        "startedAt": "2026-11-09T00:58:36.902Z"
       },
       "proxyHost": "127.0.0.1",
       "proxyPort": 0,
-      "updatedAt": "2026-10-20T03:42:37.983Z"
+      "updatedAt": "2026-11-09T00:58:36.902Z"
     }
   ]
 }

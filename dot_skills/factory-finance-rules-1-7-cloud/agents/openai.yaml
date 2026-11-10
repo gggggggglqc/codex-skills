@@ -1,0 +1,4 @@
+interface:
+  display_name: "工厂财务1–7数据核对"
+  short_description: "按月核对完工入库、生产成本、委外加工和领料数据，输出核对结果及差异明细"
+  default_prompt: "使用 $factory-finance-rules-1-7-cloud 核对指定月份的工厂财务1–7数据，汇总结果并列出差异明细。"
